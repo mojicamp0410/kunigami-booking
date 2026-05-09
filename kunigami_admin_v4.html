@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>予約管理 | 国頭村森林公園</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#1D9E75;--gdk:#0F6E56;--gdp:#085041;
+  --gl:#E1F5EE;--gm:#9FE1CB;
+  --amber:#FAEEDA;--at:#633806;
+  --rl:#FCEBEB;--rd:#A32D2D;--rb:#E24B4A;
+  --bg:#F2F1EE;--white:#fff;
+  --b1:#E2E0D8;--b2:#C8C6BE;
+  --t1:#1A1A18;--t2:#5A5A56;--t3:#9A9A94;
+  --r:12px;--rs:8px;--rx:6px;
+  --sh:0 2px 10px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.6;}
+
+/* ===== ログイン画面 ===== */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0D1812;}
+.login-box{background:var(--white);border-radius:var(--r);padding:2.5rem 2rem;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.login-logo{font-size:13px;font-weight:700;color:var(--gdp);margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--t3);margin-bottom:1.5rem;}
+.login-title{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:1.5rem;}
+.login-err{font-size:12px;color:var(--rb);background:var(--rl);padding:8px 12px;border-radius:var(--rx);margin-bottom:12px;}
+.frow{margin-bottom:12px;}
+.frow label{font-size:12px;color:var(--t2);display:block;margin-bottom:4px;font-weight:700;}
+.frow input,.frow select,.frow textarea{width:100%;padding:10px 12px;border:1.5px solid var(--b1);border-radius:var(--rs);font-size:14px;font-family:inherit;background:var(--white);color:var(--t1);outline:none;transition:border-color .15s;}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--green);}
+.frow textarea{resize:vertical;min-height:80px;}
+.btn-p{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;}
+.btn-p:hover{background:var(--gdk);}
+.btn-p.red{background:var(--rb);}
+.btn-p.red:hover{background:var(--rd);}
+.btn-p:disabled{background:var(--b2);cursor:not-allowed;}
+
+/* ===== メインレイアウト ===== */
+.layout{display:flex;min-height:100vh;}
+.sb{width:214px;background:#0D1812;padding:20px 0;flex-shrink:0;}
+.sb-logo{padding:0 18px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px;}
+.sb-logo .n{font-size:12px;font-weight:700;color:#fff;line-height:1.4;}
+.sb-logo .s{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;}
+.nav{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;transition:all .15s;}
+.nav:hover{background:rgba(255,255,255,.05);color:#fff;}
+.nav.active{background:rgba(29,158,117,.18);color:var(--gm);}
+.nav .bd{margin-left:auto;background:var(--amber);color:var(--at);font-size:10px;padding:1px 7px;border-radius:20px;font-weight:700;}
+.ns{font-size:10px;color:rgba(255,255,255,.2);padding:14px 18px 5px;letter-spacing:.08em;font-weight:700;}
+.sb-footer{padding:12px 18px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:12px;}
+.sb-logout{font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 0;}
+.sb-logout:hover{color:rgba(255,255,255,.7);}
+
+.main{flex:1;padding:22px;overflow-x:hidden;min-width:0;}
+.pt{font-size:19px;font-weight:700;color:var(--t1);margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sync-badge{font-size:11px;background:var(--gl);color:var(--gdp);padding:3px 10px;border-radius:20px;font-weight:700;}
+
+/* カード */
+.card{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:14px;box-shadow:var(--sh);}
+.ct{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+/* タブ */
+.tabs{display:flex;gap:4px;background:var(--white);border:1px solid var(--b1);border-radius:var(--rs);padding:4px;margin-bottom:16px;flex-wrap:wrap;}
+.tab{padding:7px 10px;font-size:12px;font-weight:500;cursor:pointer;color:var(--t3);border:none;background:none;border-radius:var(--rx);transition:all .15s;font-family:inherit;}
+.tab.active{background:var(--green);color:#fff;font-weight:700;}
+
+/* 予約カード */
+.bc{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:10px;box-shadow:var(--sh);}
+.bc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px;}
+.bc-id{font-size:10px;color:var(--t3);font-weight:700;}
+.bc-nm{font-size:15px;font-weight:700;color:var(--t1);margin-top:2px;}
+.bc-ht{font-size:12px;color:var(--t3);margin-top:3px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+.bp{background:var(--amber);color:var(--at);}
+.ba{background:var(--gl);color:var(--gdp);}
+.br{background:var(--rl);color:var(--rd);}
+.bc2{background:#F1EFE8;color:var(--t2);}
+.bc-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 16px;font-size:12px;color:var(--t3);margin-bottom:10px;padding:8px 10px;background:var(--bg);border-radius:var(--rx);}
+.bc-meta b{color:var(--t1);font-weight:500;}
+.bc-note-box{font-size:12px;color:var(--at);background:var(--amber);padding:6px 10px;border-radius:var(--rx);margin-bottom:8px;}
+.bc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-ok{padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--rx);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-ok:hover{background:var(--gdk);}
+.btn-g{padding:7px 12px;background:none;border:1px solid var(--b2);border-radius:var(--rx);font-size:12px;color:var(--t2);cursor:pointer;font-family:inherit;}
+.btn-g:hover{border-color:var(--t1);color:var(--t1);}
+.btn-dg{padding:7px 12px;background:none;border:1px solid var(--b2);border-radius:var(--rx);font-size:12px;color:var(--t3);cursor:pointer;font-family:inherit;}
+.btn-dg:hover{border-color:var(--rb);color:var(--rb);}
+.btn-sm{padding:5px 12px;background:none;border:1px solid var(--b1);border-radius:var(--rx);font-size:11px;color:var(--t2);cursor:pointer;font-family:inherit;}
+.btn-sm:hover{border-color:var(--green);color:var(--green);}
+.empty{text-align:center;padding:3rem;color:var(--t3);font-size:13px;}
+
+/* ツアー設定 */
+.tour-edit-grid{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;}
+.tour-list-panel{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.tl-header{padding:10px 14px;background:#0D1812;color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;}
+.tl-item{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--b1);cursor:pointer;transition:background .15s;}
+.tl-item:last-child{border-bottom:none;}
+.tl-item:hover{background:var(--gl);}
+.tl-item.active{background:var(--gl);border-left:3px solid var(--green);padding-left:11px;}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.tl-name{font-size:12px;font-weight:700;color:var(--t1);line-height:1.3;}
+.tl-item.active .tl-name{color:var(--gdp);}
+
+.edit-panel{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh);}
+.edit-section{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--b1);}
+.edit-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.edit-section-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.price-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.price-label{font-size:13px;color:var(--t1);width:140px;flex-shrink:0;}
+.price-input{flex:1;}
+.price-unit{font-size:12px;color:var(--t3);white-space:nowrap;}
+.time-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--b1);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--t1);margin:2px;}
+.time-tag .del{cursor:pointer;color:var(--t3);font-size:14px;line-height:1;}
+.time-tag .del:hover{color:var(--rb);}
+.time-add-row{display:flex;gap:6px;margin-top:6px;}
+.time-add-row input{width:120px;}
+.cap-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cap-label{font-size:13px;color:var(--t1);width:140px;flex-shrink:0;}
+.save-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--b1);}
+.save-msg{font-size:12px;color:var(--green);font-weight:700;}
+
+/* カレンダー管理 */
+.tour-cal-wrap{display:grid;grid-template-columns:210px 1fr;gap:16px;align-items:start;}
+.tour-selector{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.ts-header{padding:10px 14px;background:#0D1812;color:#fff;font-size:11px;font-weight:700;}
+.ts-item{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--b1);cursor:pointer;transition:background .15s;}
+.ts-item:last-child{border-bottom:none;}
+.ts-item:hover{background:var(--gl);}
+.ts-item.active{background:var(--gl);border-left:3px solid var(--green);padding-left:11px;}
+.ts-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ts-info .ts-name{font-size:12px;font-weight:700;color:var(--t1);}
+.ts-item.active .ts-name{color:var(--gdp);}
+.ts-info .ts-stats{font-size:10px;color:var(--t3);margin-top:1px;}
+.cal-panel{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.25rem;box-shadow:var(--sh);}
+.cal-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-month-nav{display:flex;align-items:center;gap:8px;}
+.cal-nav-btn{cursor:pointer;background:none;border:1px solid var(--b1);border-radius:var(--rx);width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:15px;}
+.cal-nav-btn:hover{border-color:var(--green);color:var(--green);}
+.cal-month-title{font-size:15px;font-weight:700;color:var(--t1);}
+.cal-tour-badge{font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;color:#fff;}
+.bulk-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+.bulk-label{font-size:11px;color:var(--t3);}
+.btn-bulk-open{padding:5px 12px;background:var(--gl);color:var(--gdp);border:1px solid var(--gm);border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-bulk-open:hover{background:var(--gm);}
+.btn-bulk-close{padding:5px 12px;background:var(--rl);color:var(--rd);border:1px solid #F0BABA;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dn{text-align:center;font-size:10px;color:var(--t3);padding:3px 0;font-weight:700;}
+.cal-cell{min-height:58px;border:1px solid var(--b1);border-radius:var(--rx);background:var(--white);display:flex;flex-direction:column;align-items:center;padding:4px 2px;transition:all .15s;}
+.cal-cell.clickable{cursor:pointer;}
+.cal-cell.clickable:hover{border-color:var(--green);transform:scale(1.04);}
+.cal-cell .cn{font-size:12px;font-weight:700;color:var(--t1);line-height:1;}
+.cal-cell.is-tue .cn,.cal-cell.is-past .cn{color:var(--b2);}
+.cal-cell .tog{font-size:16px;line-height:1;margin-top:2px;}
+.cal-cell .bk-cnt{font-size:9px;font-weight:700;margin-top:2px;padding:1px 5px;border-radius:8px;}
+.cal-cell .cap-info{font-size:9px;color:var(--t3);margin-top:1px;}
+.cal-cell.is-open{background:var(--gl);border-color:var(--gm);}
+.cal-cell.is-closed{background:var(--rl);border-color:#F0BABA;}
+.cal-cell.is-tue,.cal-cell.is-past{opacity:.4;cursor:default;}
+.cal-cell.is-empty{background:transparent;border:none;cursor:default;}
+.cal-cell.today-cell{box-shadow:0 0 0 2px var(--green);}
+.legend-row{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t3);}
+.leg-box{width:11px;height:11px;border-radius:3px;}
+.day-detail{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.25rem;box-shadow:var(--sh);margin-top:12px;}
+.day-detail-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.close-x{background:none;border:none;color:var(--t3);cursor:pointer;font-size:17px;}
+.day-bk-item{padding:8px 0;border-bottom:1px solid var(--b1);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.day-bk-item:last-child{border-bottom:none;}
+
+/* CSV・エクスポート */
+.export-card{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh);margin-bottom:14px;}
+.export-title{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--t1);}
+.export-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.export-row label{font-size:12px;color:var(--t3);font-weight:700;width:80px;}
+.export-row input,.export-row select{padding:8px 10px;border:1px solid var(--b1);border-radius:var(--rx);font-size:13px;font-family:inherit;background:var(--white);color:var(--t1);outline:none;}
+.export-row input:focus,.export-row select:focus{border-color:var(--green);}
+.btn-export{padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-export:hover{background:var(--gdk);}
+
+/* モーダル */
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem;}
+.modal{background:var(--white);border-radius:var(--r);padding:1.5rem;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
+.mcls{background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);line-height:1;padding:4px;}
+.lang-tabs{display:flex;gap:5px;margin-bottom:8px;}
+.lt{padding:4px 12px;font-size:12px;border:1px solid var(--b1);border-radius:20px;cursor:pointer;color:var(--t3);background:none;font-family:inherit;}
+.lt.active{background:var(--green);color:#fff;border-color:var(--green);}
+.msg-box{width:100%;min-height:200px;font-size:13px;line-height:1.9;border:1px solid var(--b1);border-radius:var(--rs);padding:12px;color:var(--t1);background:var(--white);resize:vertical;font-family:'Noto Sans JP',sans-serif;}
+.msg-box:focus{outline:none;border-color:var(--green);}
+.map-chip{display:inline-flex;align-items:center;gap:4px;background:var(--gl);color:var(--gdp);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;text-decoration:none;margin-top:6px;}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn-s{flex:1;padding:10px;background:none;border:1px solid var(--b2);border-radius:var(--rx);font-size:13px;color:var(--t1);cursor:pointer;font-family:inherit;}
+.btn-copy{padding:7px 12px;background:none;border:1px solid var(--b1);border-radius:var(--rx);font-size:12px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.btn-copy:hover,.btn-copy.copied{border-color:var(--green);color:var(--green);}
+.stitle{font-size:12px;font-weight:700;color:var(--t1);margin:12px 0 6px;}
+.cancel-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px solid var(--b1);}
+.cancel-row:last-child{border-bottom:none;}
+.clbl{color:var(--t3);}
+.crh{color:var(--rb);font-weight:700;}
+.cancel-total{background:var(--rl);border-radius:var(--rs);padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+.ctlbl{font-size:13px;color:var(--rd);font-weight:700;}
+.ctval{font-size:18px;font-weight:700;color:var(--rb);}
+.cfree{background:var(--gl);border-radius:var(--rs);padding:10px 14px;margin-top:8px;font-size:13px;color:var(--gdp);font-weight:500;}
+.crc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);padding:1rem;margin-top:8px;}
+.nbox{font-size:12px;color:var(--t2);line-height:1.8;background:var(--bg);padding:8px 12px;border-radius:var(--rx);margin-top:6px;}
+
+.calc-card{background:var(--white);border:1px solid var(--b1);border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh);}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ===== ログイン画面 ===== -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">国頭村森林公園</div>
+    <div class="login-sub">KUNIGAMI FOREST PARK</div>
+    <div class="login-title">管理者ログイン</div>
+    <div id="login-err" class="login-err hidden">パスワードが正しくありません</div>
+    <div class="frow"><label>パスワード</label><input type="password" id="pw-input" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-p" onclick="doLogin()">ログイン</button>
+    <p style="font-size:11px;color:var(--t3);margin-top:12px;text-align:center;">デモ用パスワード：<b>kunigami2026</b></p>
+  </div>
+</div>
+
+<!-- ===== メイン画面 ===== -->
+<div id="main-screen" class="hidden">
+<div class="layout">
+
+<aside class="sb">
+  <div class="sb-logo"><div class="n">国頭村森林公園</div><div class="s">管理者ダッシュボード</div></div>
+  <div class="ns">予約管理</div>
+  <button class="nav active" onclick="showPage('pending',this)">📋 承認待ち<span class="bd" id="nav-bd">0</span></button>
+  <button class="nav" onclick="showPage('approved',this)">✅ 承認済み</button>
+  <button class="nav" onclick="showPage('cancelled',this)">🚫 キャンセル</button>
+  <div class="ns">設定</div>
+  <button class="nav" onclick="showPage('calendar',this)">📅 カレンダー管理</button>
+  <button class="nav" onclick="showPage('tour-edit',this)">✏️ ツアー設定</button>
+  <button class="nav" onclick="showPage('export',this)">📊 データ出力</button>
+  <button class="nav" onclick="showPage('calc',this)">🧮 キャンセル料計算</button>
+  <div class="sb-footer"><button class="sb-logout" onclick="doLogout()">ログアウト</button></div>
+</aside>
+
+<main class="main">
+
+  <!-- 承認待ち -->
+  <div id="page-pending">
+    <div class="pt">承認待ちの予約 <span class="sync-badge" id="sync-label">🟢 同期済み</span></div>
+    <div class="tabs" id="filter-tabs">
+      <button class="tab active" onclick="filterTab('all',this)">すべて</button>
+      <button class="tab" onclick="filterTab('star1',this)">🌌 てぃんがーら</button>
+      <button class="tab" onclick="filterTab('star2',this)">⭐ 星語り</button>
+      <button class="tab" onclick="filterTab('photo',this)">📷 フォト</button>
+      <button class="tab" onclick="filterTab('forest',this)">🌿 森探検</button>
+      <button class="tab" onclick="filterTab('monitor',this)">🔬 モニタリング</button>
+    </div>
+    <div id="list-pending"></div>
+  </div>
+
+  <!-- 承認済み -->
+  <div id="page-approved" class="hidden">
+    <div class="pt">承認済みの予約</div>
+    <div id="list-approved"></div>
+  </div>
+
+  <!-- キャンセル -->
+  <div id="page-cancelled" class="hidden">
+    <div class="pt">キャンセル済み</div>
+    <div id="list-cancelled"></div>
+  </div>
+
+  <!-- カレンダー管理 -->
+  <div id="page-calendar" class="hidden">
+    <div class="pt">カレンダー管理 <span class="sync-badge">○×をクリックで切り替え</span></div>
+    <div class="tour-cal-wrap">
+      <div>
+        <div class="tour-selector">
+          <div class="ts-header">ツアーを選択</div>
+          <div id="tour-selector-list"></div>
+        </div>
+      </div>
+      <div>
+        <div class="cal-panel">
+          <div class="cal-panel-header">
+            <div class="cal-month-nav">
+              <button class="cal-nav-btn" onclick="prevM()">‹</button>
+              <span class="cal-month-title" id="cal-hd"></span>
+              <button class="cal-nav-btn" onclick="nextM()">›</button>
+            </div>
+            <span class="cal-tour-badge" id="cal-tour-badge">—</span>
+          </div>
+          <div class="bulk-bar">
+            <span class="bulk-label">この月を一括：</span>
+            <button class="btn-bulk-open" onclick="bulkMonth('open')">○ すべて受付可</button>
+            <button class="btn-bulk-close" onclick="bulkMonth('closed')">× すべて受付停止</button>
+          </div>
+          <div class="cal-grid" id="cal-mgr-grid"></div>
+          <div class="legend-row">
+            <div class="leg"><div class="leg-box" style="background:var(--gl);border:1px solid var(--gm);"></div>受付可 ○</div>
+            <div class="leg"><div class="leg-box" style="background:var(--rl);border:1px solid #F0BABA;"></div>受付停止 ×</div>
+            <div class="leg"><div class="leg-box" style="background:#FAFAF8;border:1px solid var(--b1);opacity:.6;"></div>定休日（火）/ 過去</div>
+          </div>
+        </div>
+        <div class="day-detail hidden" id="day-detail-panel">
+          <div class="day-detail-title"><span id="day-detail-title-text"></span><button class="close-x" onclick="closeDayDetail()">✕</button></div>
+          <div id="day-detail-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ツアー設定 -->
+  <div id="page-tour-edit" class="hidden">
+    <div class="pt">ツアー設定 <span class="sync-badge">変更はお客様画面に即時反映</span></div>
+    <div class="tour-edit-grid">
+      <div>
+        <div class="tour-list-panel">
+          <div class="tl-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>ツアーを選択</span>
+            <button onclick="openNewTourModal()" style="background:rgba(29,158,117,.3);border:none;color:#9FE1CB;font-size:18px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit;">+</button>
+          </div>
+          <div id="tour-edit-list"></div>
+        </div>
+      </div>
+      <div class="edit-panel" id="edit-panel">
+        <p style="color:var(--t3);font-size:13px;">左のリストからツアーを選択してください</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- データ出力 -->
+  <div id="page-export" class="hidden">
+    <div class="pt">データ出力</div>
+    <div class="export-card">
+      <div class="export-title">予約データ CSV エクスポート</div>
+      <div class="export-row"><label>期間（開始）</label><input type="date" id="exp-from"></div>
+      <div class="export-row"><label>期間（終了）</label><input type="date" id="exp-to"></div>
+      <div class="export-row"><label>ステータス</label>
+        <select id="exp-status">
+          <option value="all">すべて</option>
+          <option value="pending">承認待ち</option>
+          <option value="approved">承認済み</option>
+          <option value="cancelled">キャンセル</option>
+        </select>
+      </div>
+      <div class="export-row"><label>ツアー</label>
+        <select id="exp-tour">
+          <option value="all">すべて</option>
+          <option value="star1">やんばるてぃんがーらストーリー</option>
+          <option value="star2">やんばる星語りツアー</option>
+          <option value="photo">スターナイトフォト</option>
+          <option value="forest">夜の森探検ツアー</option>
+          <option value="monitor">生き物モニタリング</option>
+        </select>
+      </div>
+      <button class="btn-export" onclick="exportCSV()">📥 CSVをダウンロード</button>
+      <div id="exp-result" style="font-size:12px;color:var(--t3);margin-top:8px;"></div>
+    </div>
+    <div class="export-card">
+      <div class="export-title">統計サマリー</div>
+      <div id="stats-area" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;"></div>
+    </div>
+  </div>
+
+  <!-- キャンセル料計算 -->
+  <div id="page-calc" class="hidden">
+    <div class="pt">キャンセル料シミュレーター</div>
+    <div class="calc-card">
+      <div class="frow"><label>ツアー催行日</label><input type="date" id="cc-td"></div>
+      <div class="frow"><label>キャンセル申請日</label><input type="date" id="cc-cd"></div>
+      <div class="frow"><label>ツアー料金合計（円）</label><input type="number" id="cc-amt" placeholder="例：13200"></div>
+      <div class="frow"><label>キャンセル区分</label>
+        <select id="cc-type">
+          <option value="guest">お客様都合（キャンセル料あり）</option>
+          <option value="weather">悪天候・自然災害（料金なし）</option>
+          <option value="park">公園都合・催行中止（全額返金）</option>
+        </select>
+      </div>
+      <button class="btn-p" style="width:100%;margin-top:6px;flex:none;" onclick="runCalc()">計算する</button>
+      <div id="cc-result" class="hidden"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+</div>
+
+<!-- モーダル -->
+<div class="modal-bg hidden" id="mbg" onclick="closeBg(event)">
+  <div class="modal"><div class="modal-title"><span id="mtitle"></span><button class="mcls" onclick="closeModal()">✕</button></div><div id="mbody"></div></div>
+</div>
+
+<script>
+// ========== 定数 ==========
+const MAP_URL='https://maps.app.goo.gl/kunigami-parking';
+const MAP_LABEL='やんばる森のおもちゃ美術館 駐車場（集合場所）';
+const SK_BOOKINGS='knp_bookings';
+const SK_CALENDAR='knp_calendar_v2';
+const SK_TOURS='knp_tour_settings';
+const ADMIN_PW='kunigami2026';
+
+const TOUR_COLORS={
+  star1:{color:'#1D9E75',dot:'#1D9E75'},
+  star2:{color:'#185FA5',dot:'#185FA5'},
+  photo:{color:'#854F0B',dot:'#BA7517'},
+  forest:{color:'#3B6D11',dot:'#639922'},
+  monitor:{color:'#533AB7',dot:'#7F77DD'},
+};
+// 新規ツアー用カラーパレット
+const COLOR_PALETTE=[
+  {label:'グリーン',color:'#1D9E75'},{label:'ブルー',color:'#185FA5'},
+  {label:'オレンジ',color:'#C4620F'},{label:'フォレスト',color:'#3B6D11'},
+  {label:'パープル',color:'#533AB7'},{label:'レッド',color:'#A32D2D'},
+  {label:'ティール',color:'#0E7B7B'},{label:'ゴールド',color:'#8C6D00'},
+  {label:'ネイビー',color:'#1A2F6B'},{label:'ローズ',color:'#9B2C5A'},
+];
+function getTourColor(key){
+  if(TOUR_COLORS[key])return TOUR_COLORS[key];
+  const t=tourSettings[key];
+  if(t&&t.color)return{color:t.color,dot:t.color};
+  return{color:'#5A5A56',dot:'#5A5A56'};
+}
+
+// デフォルトのツアー設定（管理者が上書き可能）
+const DEFAULT_TOURS={
+  star1:{
+    name:'やんばるてぃんがーらストーリー',short:'てぃんがーら',
+    sub:'星空観望ツアー',
+    desc:'星空ソムリエ®がやんばるの夜空へ誘います。天文台付きの星見台へ移動し、リクライニングシートに寝そべりながらゆっくりと星空を眺めましょう。コンピューター制御の本格的な天体望遠鏡で木星・土星などの惑星や星雲・星団を観察。漆黒の森から聞こえてくる生き物の鳴き声や森の香りに癒されながら、やんばるの夜空のストーリーを感じることができます。',
+    dur:'約75分',min_pax:2,
+    notes:'🧥 天文台は高台で体感温度が低くなります。温度調節可能な服装でお越しください。\n🌧 雨天・曇天時は代替ツアーに変更して実施することがあります。\n🔦 公園内は非常に暗いため、ライトのご持参をお勧めします。',
+    pax:[{l:'大人（13歳以上）',p:6600},{l:'小学生（6〜12歳）',p:4400},{l:'未就学児（3〜5歳）',p:1100},{l:'2歳以下',p:0}],
+    pt:'person',times:['18:00〜','19:00〜','20:00〜'],
+    img:'https://www.kunigami-forest-park.org/mywp/assets/images/activity/guide_04.jpg',
+    capacity:10
+  },
+  star2:{
+    name:'やんばる星語りツアー',short:'星語り',
+    sub:'星空観望ツアー',
+    desc:'星・星座・流れ星を楽しむ星空ソムリエ®のガイドツアー。沖縄ならではの星にまつわるエピソードをわかりやすく楽しくお伝えします。やんばるの夜空を彩る星々の物語を一緒に体験しませんか。天の川が一年中見られる国頭ならではの感動をお楽しみいただけます。',
+    dur:'約60分',min_pax:2,
+    notes:'🌧 雨天・曇天時は代替ツアーに変更して実施することがあります。\n🔦 ライトのご持参をお勧めします。\n🧥 夜は冷え込む日もあります。温度調節可能な服装でお越しください。',
+    pax:[{l:'大人（13歳以上）',p:3300},{l:'小学生（6〜12歳）',p:2200},{l:'未就学児（3〜5歳）',p:550},{l:'2歳以下',p:0}],
+    pt:'person',times:['18:30〜','19:30〜','20:30〜'],
+    img:'https://www.kunigami-forest-park.org/mywp/assets/images/activity/guide_05.jpg',
+    capacity:10
+  },
+  photo:{
+    name:'スターナイトフォト',short:'フォト',
+    sub:'星空写真撮影',
+    desc:'満天の星空や天の川をバックに本格的な星空フォトを撮影します。カメラマンが同行し、アートのような幻想的な星空写真を撮ってしっかりとしたクオリティの写真を残します。撮影データ3カット付き。ご家族・友人・カップルとの一生忘れられないやんばるの思い出を写真に。',
+    dur:'約30分',min_pax:1,
+    notes:'📷 撮影データ3カット付きです。\n🔦 足元を照らすライトをお持ちになるとよいでしょう。\n🧥 森の夜は冷え込む日もあります。温度調節可能な服装でお越しください。',
+    pax:[{l:'1組（人数制限なし）',p:22000}],
+    pt:'group',times:['18:30〜','19:30〜','20:30〜','21:00〜'],
+    img:'https://www.kunigami-forest-park.org/mywp/wp-content/uploads/2024/10/starnightphoto.jpg',
+    capacity:3
+  },
+  forest:{
+    name:'夜のやんばる森探検ツアー',short:'森探検',
+    sub:'森のガイドツアー',
+    desc:'世界自然遺産の入り口、やんばるの森で夜行性の生き物たちを探す探検ツアー。ヤンバルクイナやノグチゲラなど、やんばるにしかいない希少な動植物が暮らす豊かな自然の多彩な表情を、森林公園のガイドがご案内します。木々の中で静かに暮らす生き物を探してみましょう。',
+    dur:'約90分',min_pax:2,
+    notes:'👟 長袖・長ズボン・動きやすい靴でお越しください。\n🔦 懐中電灯・ライトを必ずお持ちください（公園内は県内一暗い環境です）。\n🌿 生き物への影響を考え、ペット同伴はご遠慮ください。',
+    pax:[{l:'大人（13歳以上）',p:3300},{l:'小学生（6〜12歳）',p:2200},{l:'未就学児（3〜5歳）',p:550},{l:'2歳以下',p:0}],
+    pt:'person',times:['19:00〜','20:00〜'],
+    img:'https://www.kunigami-forest-park.org/mywp/wp-content/uploads/2024/02/night-tour.jpg',
+    capacity:8
+  },
+  monitor:{
+    name:'生き物モニタリング',short:'モニタリング',
+    sub:'1日1組限定プライベートツアー',
+    desc:'世界自然遺産やんばるの森の入口にあたる国頭村森林公園では、生物の変遷を記録するために日々モニタリング調査を行っています。このツアーでは、調査員の一員として実際の活動を体験していただきます。1日1組限定の完全プライベートツアーです。',
+    dur:'約120分',min_pax:1,
+    notes:'🔬 1日1組限定の完全プライベートツアーです。\n👟 長袖・長ズボン・動きやすい靴でお越しください。\n🔦 ライトをお持ちください。',
+    pax:[{l:'大人（13歳以上）',p:7480},{l:'子供（6〜12歳）',p:5390},{l:'2歳以下',p:0}],
+    pt:'person',times:['09:00〜','13:00〜'],
+    img:'https://www.kunigami-forest-park.org/mywp/wp-content/uploads/2024/12/20240625073259_593018311_16641_0.webp',
+    capacity:1
+  }
+};
+
+// ========== 状態 ==========
+let bookings=[];
+let calendarData={};
+let tourSettings={};
+let curB=null;
+let calY=2026,calM=5;
+let curFilter='all';
+let curCalTour='star1';
+let curEditTour='star1';
+
+// ========== 認証 ==========
+function doLogin(){
+  const pw=document.getElementById('pw-input').value;
+  if(pw===ADMIN_PW){
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-screen').classList.remove('hidden');
+    initDashboard();
+  }else{
+    document.getElementById('login-err').classList.remove('hidden');
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+function doLogout(){
+  document.getElementById('main-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('pw-input').value='';
+  document.getElementById('login-err').classList.add('hidden');
+}
+
+// ========== ストレージ ==========
+async function loadBookings(){
+  try{
+    const r=await window.storage.get(SK_BOOKINGS,true);
+    if(r&&r.value){const p=JSON.parse(r.value);bookings=Array.isArray(p)?p:getSamples();}
+    else bookings=getSamples();
+  }catch(e){bookings=getSamples();}
+}
+async function saveBookings(){try{await window.storage.set(SK_BOOKINGS,JSON.stringify(bookings),true);}catch(e){}}
+
+async function loadCalendar(){
+  try{
+    const r=await window.storage.get(SK_CALENDAR,true);
+    if(r&&r.value){const p=JSON.parse(r.value);calendarData=(p&&typeof p==='object')?p:buildDefaultCal();}
+    else calendarData=buildDefaultCal();
+  }catch(e){calendarData=buildDefaultCal();}
+}
+async function saveCalendar(){try{await window.storage.set(SK_CALENDAR,JSON.stringify(calendarData),true);}catch(e){}}
+
+async function loadTourSettings(){
+  try{
+    const r=await window.storage.get(SK_TOURS,true);
+    if(r&&r.value){const p=JSON.parse(r.value);tourSettings=(p&&typeof p==='object')?p:JSON.parse(JSON.stringify(DEFAULT_TOURS));}
+    else tourSettings=JSON.parse(JSON.stringify(DEFAULT_TOURS));
+  }catch(e){tourSettings=JSON.parse(JSON.stringify(DEFAULT_TOURS));}
+}
+async function saveTourSettings(){try{await window.storage.set(SK_TOURS,JSON.stringify(tourSettings),true);}catch(e){}}
+
+function getTour(key){return tourSettings[key]||DEFAULT_TOURS[key]||{};}
+
+function buildDefaultCal(){
+  const data={};
+  Object.keys(DEFAULT_TOURS).forEach(t=>{
+    data[t]={};
+    for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;data[t][k]=new Date(2026,m-1,d).getDay()===2?'closed':'open';}}
+  });
+  return data;
+}
+
+function getSamples(){
+  return [
+    {id:'KNP-2026-0047',name:'田中 美咲',kana:'タナカ ミサキ',email:'misaki@example.com',tel:'090-1234-5678',tour:'やんばるてぃんがーらストーリー',tourType:'star1',date:'2026-05-17',time:'19:00〜',pax:{adult:2,child:1},total:17600,hotel:'ハレクラニ沖縄',area:'恩納村',note:'',status:'pending',createdAt:new Date().toISOString()},
+    {id:'KNP-2026-0048',name:'鈴木 健太郎',kana:'スズキ ケンタロウ',email:'kenta@example.com',tel:'080-9876-5432',tour:'夜のやんばる森探検ツアー',tourType:'forest',date:'2026-05-17',time:'19:00〜',pax:{adult:3},total:9900,hotel:'オクマプライベートビーチ&リゾート',area:'国頭村奥間',note:'子どもが心配です',status:'pending',createdAt:new Date().toISOString()},
+    {id:'KNP-2026-0049',name:'李 美玲',kana:'リ ミレイ',email:'meiling@example.com',tel:'090-1111-2222',tour:'スターナイトフォト',tourType:'photo',date:'2026-05-22',time:'20:30〜',pax:{group:1},total:22000,hotel:'ブセナテラス',area:'名護市',note:'',status:'pending',createdAt:new Date().toISOString()},
+    {id:'KNP-2026-0044',name:'山本 一家',kana:'ヤマモト イッカ',email:'yamamoto@example.com',tel:'080-3333-4444',tour:'やんばるてぃんがーらストーリー',tourType:'star1',date:'2026-05-15',time:'18:00〜',pax:{adult:2,child:2,infant:1},total:19800,hotel:'ANAインターコンチネンタル万座',area:'恩納村',note:'',status:'approved',createdAt:new Date().toISOString()},
+    {id:'KNP-2026-0038',name:'森 千代',kana:'モリ チヨ',email:'chiyo@example.com',tel:'090-7777-8888',tour:'やんばる星語りツアー',tourType:'star2',date:'2026-05-10',time:'18:30〜',pax:{adult:1},total:3300,hotel:'',area:'',note:'',status:'cancelled',cancelDate:'2026-05-08',cancelFee:990,createdAt:new Date().toISOString()},
+  ];
+}
+
+// ========== ページ切替 ==========
+function showPage(p,el){
+  ['pending','approved','cancelled','calendar','tour-edit','export','calc'].forEach(x=>document.getElementById('page-'+x).classList.toggle('hidden',x!==p));
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(p==='pending')renderList('pending');
+  else if(p==='approved')renderList('approved');
+  else if(p==='cancelled')renderList('cancelled');
+  else if(p==='calendar'){renderTourSelector();renderCalMgr();}
+  else if(p==='tour-edit'){renderTourEditList();renderTourEditPanel(curEditTour);}
+  else if(p==='export'){renderStats();document.getElementById('exp-from').value=new Date(2026,4,1).toISOString().slice(0,10);document.getElementById('exp-to').value=new Date(2026,11,31).toISOString().slice(0,10);}
+}
+
+function filterTab(f,el){
+  curFilter=f;
+  document.querySelectorAll('#filter-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderList('pending');
+}
+
+// ========== 予約一覧 ==========
+function renderList(status){
+  const el=document.getElementById('list-'+status);
+  if(!el)return;
+  let list=bookings.filter(b=>b.status===status);
+  if(status==='pending'&&curFilter!=='all')list=list.filter(b=>b.tourType===curFilter);
+  if(!list.length){el.innerHTML='<div class="empty">📭 該当する予約はありません</div>';return;}
+  el.innerHTML=list.sort((a,b)=>a.date.localeCompare(b.date)).map(b=>{
+    const ps=fmtPax(b.pax);const ts=b.total>0?'¥'+b.total.toLocaleString():'要確認';
+    const lbls={pending:'承認待ち',approved:'承認済み',rejected:'不承認',cancelled:'キャンセル'};
+    const cls={pending:'bp',approved:'ba',rejected:'br',cancelled:'bc2'};
+    const tc=TOUR_COLORS[b.tourType];
+    const dot=tc?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${tc.dot};margin-right:4px;vertical-align:1px;"></span>`:'';
+    let act='';
+    if(b.status==='pending')act=`<button class="btn-ok" onclick="openM('${b.id}','approve')">✉ 承認・メッセージ</button><button class="btn-dg" onclick="openM('${b.id}','reject')">受入不可・代替提案</button>`;
+    else if(b.status==='approved')act=`<button class="btn-g" onclick="openM('${b.id}','approve')">✉ メッセージ再送</button><button class="btn-dg" onclick="openM('${b.id}','cancel')">キャンセル処理</button>`;
+    else if(b.status==='cancelled')act=`<span style="font-size:12px;color:var(--t3);">${b.cancelFee>0?'キャンセル料 ¥'+b.cancelFee.toLocaleString():'料金なし'}　申請日：${b.cancelDate||'—'}</span>`;
+    return `<div class="bc">
+      <div class="bc-top"><div><div class="bc-id">${b.id}</div><div class="bc-nm">${b.name}（${b.kana}）</div><div class="bc-ht">🏨 ${b.hotel||'宿泊先未入力'}${b.area?' · '+b.area:''}</div></div><span class="badge ${cls[b.status]}">${lbls[b.status]}</span></div>
+      <div class="bc-meta"><div>ツアー：<b>${dot}${b.tour}</b></div><div>日時：<b>${b.date} ${b.time}</b></div><div>人数：<b>${ps}</b></div><div>料金：<b>${ts}</b></div><div>メール：<b>${b.email}</b></div><div>TEL：<b>${b.tel}</b></div></div>
+      ${b.note?`<div class="bc-note-box">💬 ${b.note}</div>`:''}
+      <div class="bc-actions">${act}</div>
+    </div>`;
+  }).join('');
+}
+
+function fmtPax(p){const r=[];if(p.adult)r.push('大人'+p.adult+'名');if(p.child)r.push('小学生'+p.child+'名');if(p.infant)r.push('未就学児'+p.infant+'名');if(p.group)r.push('1組');return r.join(' · ')||'—';}
+function updateBadge(){const el=document.getElementById('nav-bd');if(el)el.textContent=bookings.filter(b=>b.status==='pending').length;}
+
+// ========== ツアー設定編集 ==========
+// 全ツアーキー（デフォルト＋カスタム）を返す
+function allTourKeys(){
+  const defaults=Object.keys(DEFAULT_TOURS);
+  const custom=Object.keys(tourSettings).filter(k=>!defaults.includes(k));
+  return [...defaults,...custom];
+}
+
+function renderTourEditList(){
+  const el=document.getElementById('tour-edit-list');
+  if(!el)return;
+  el.innerHTML=allTourKeys().map(key=>{
+    const t=getTour(key);const c=getTourColor(key);
+    const isCustom=!DEFAULT_TOURS[key];
+    return `<div class="tl-item${key===curEditTour?' active':''}" onclick="selectEditTour('${key}')">
+      <div class="tl-dot" style="background:${c.dot};"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="tl-name" style="white-space:normal;line-height:1.3;">${t.name||'（名前未設定）'}</div>
+        ${isCustom?'<div style="font-size:9px;color:var(--green);font-weight:700;margin-top:1px;">カスタム</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectEditTour(key){
+  curEditTour=key;
+  renderTourEditList();
+  renderTourEditPanel(key);
+}
+
+// ========== 新規ツアー作成モーダル ==========
+function openNewTourModal(){
+  const mbg=document.getElementById('mbg');if(!mbg)return;
+  mbg.classList.remove('hidden');
+  const mt=document.getElementById('mtitle');if(mt)mt.textContent='新しいツアーを作成';
+  const mb=document.getElementById('mbody');if(!mb)return;
+  const palette=COLOR_PALETTE.map((c,i)=>`
+    <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;margin:3px;">
+      <input type="radio" name="new-color" value="${c.color}" ${i===0?'checked':''} style="display:none;">
+      <span class="color-swatch" style="width:22px;height:22px;border-radius:50%;background:${c.color};display:inline-block;border:2px solid transparent;transition:all .15s;" onclick="selectColor(this,'${c.color}')"></span>
+      <span style="font-size:11px;color:var(--t2);">${c.label}</span>
+    </label>`).join('');
+
+  mb.innerHTML=`
+    <div class="frow"><label>ツアー名 <span style="color:var(--rb);">必須</span></label><input type="text" id="new-name" placeholder="例：朝のやんばる野鳥ウォーキング"></div>
+    <div class="frow"><label>短縮名（サイドバー表示用）</label><input type="text" id="new-short" placeholder="例：野鳥ウォーク" maxlength="10"></div>
+    <div class="frow"><label>カテゴリ（ツアー種別）</label><input type="text" id="new-sub" placeholder="例：朝のガイドツアー"></div>
+    <div class="frow"><label>バッジ表示（カードに表示）</label><input type="text" id="new-badge" placeholder="例：朝のツアー" maxlength="12"></div>
+    <div class="frow"><label>テーマカラー</label><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px;" id="color-palette-wrap">${palette}</div><div id="selected-color-preview" style="margin-top:6px;font-size:12px;color:var(--t3);">選択中：<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1D9E75;vertical-align:-2px;margin-right:4px;"></span>グリーン</div></div>
+    <div class="frow"><label>料金タイプ</label>
+      <select id="new-pt" onchange="updateNewPriceType()">
+        <option value="person">人数制（大人・子供など）</option>
+        <option value="group">グループ制（1組あたり）</option>
+      </select>
+    </div>
+    <div id="new-pax-wrap">
+      <div class="frow"><label>料金区分と金額</label>
+        <div id="new-pax-rows">
+          <div class="price-row" style="margin-bottom:6px;"><input type="text" placeholder="区分名（例：大人）" style="width:130px;margin-right:6px;"><input type="number" placeholder="金額" style="width:90px;"><span class="price-unit" style="margin-left:6px;">円 / 人</span></div>
+        </div>
+        <button class="btn-sm" style="margin-top:4px;" onclick="addNewPaxRow()">＋ 区分を追加</button>
+      </div>
+    </div>
+    <div class="frow"><label>所要時間</label><input type="text" id="new-dur" placeholder="例：約90分"></div>
+    <div class="frow"><label>開始時間帯（カンマ区切り）</label><input type="text" id="new-times" placeholder="例：09:00〜, 14:00〜, 19:00〜"></div>
+    <div class="f2" style="margin-top:4px;">
+      <div class="frow"><label>最少催行人数</label><input type="number" id="new-minpax" value="2" min="1"></div>
+      <div class="frow"><label>最大受付数（組/件）</label><input type="number" id="new-cap" value="10" min="1"></div>
+    </div>
+    <div class="frow"><label>説明文</label><textarea id="new-desc" style="min-height:80px;" placeholder="お客様に表示されるツアーの説明文を入力してください"></textarea></div>
+    <div class="frow"><label>注意事項・持ち物（1行ずつ入力）</label><textarea id="new-notes" style="min-height:60px;" placeholder="例：&#10;👟 動きやすい靴でお越しください&#10;🔦 ライトをお持ちください"></textarea></div>
+    <div class="frow"><label>画像URL（任意）</label><input type="text" id="new-img" placeholder="https://..."></div>
+    <div class="btn-row">
+      <button class="btn-s" onclick="closeModal()">キャンセル</button>
+      <button class="btn-p" style="flex:1;" onclick="createNewTour()">✅ ツアーを作成する</button>
+    </div>`;
+  // 初期カラーのスウォッチをアクティブに
+  setTimeout(()=>{const first=mb.querySelector('.color-swatch');if(first)first.style.border='2px solid var(--t1)';},50);
+}
+
+let _newColor=COLOR_PALETTE[0].color;
+function selectColor(el,color){
+  _newColor=color;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.style.border='2px solid transparent');
+  el.style.border='2px solid var(--t1)';
+  const found=COLOR_PALETTE.find(c=>c.color===color);
+  const prev=document.getElementById('selected-color-preview');
+  if(prev)prev.innerHTML=`選択中：<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${color};vertical-align:-2px;margin-right:4px;"></span>${found?found.label:color}`;
+}
+
+function updateNewPriceType(){
+  const pt=document.getElementById('new-pt')?.value;
+  document.querySelectorAll('#new-pax-rows .price-unit').forEach(el=>el.textContent='円 / '+(pt==='group'?'組':'人'));
+}
+
+function addNewPaxRow(){
+  const wrap=document.getElementById('new-pax-rows');if(!wrap)return;
+  const pt=document.getElementById('new-pt')?.value||'person';
+  const row=document.createElement('div');
+  row.className='price-row';row.style.marginBottom='6px';
+  row.innerHTML=`<input type="text" placeholder="区分名（例：子供）" style="width:130px;margin-right:6px;"><input type="number" placeholder="金額" style="width:90px;"><span class="price-unit" style="margin-left:6px;">円 / ${pt==='group'?'組':'人'}</span><button onclick="this.parentNode.remove()" style="margin-left:6px;background:none;border:none;color:var(--rb);cursor:pointer;font-size:16px;">×</button>`;
+  wrap.appendChild(row);
+}
+
+async function createNewTour(){
+  const name=document.getElementById('new-name')?.value.trim();
+  if(!name){alert('ツアー名を入力してください。');return;}
+  const pt=document.getElementById('new-pt')?.value||'person';
+  const timesRaw=document.getElementById('new-times')?.value.trim();
+  const times=timesRaw?timesRaw.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const paxRows=[...document.querySelectorAll('#new-pax-rows .price-row')];
+  const pax=paxRows.map(row=>{
+    const inputs=row.querySelectorAll('input');
+    const label=inputs[0]?.value.trim()||'参加者';
+    const price=inputs[1]?.value.trim();
+    return{l:label,p:price===''?null:parseInt(price)||0};
+  }).filter(p=>p.l);
+  if(!pax.length)pax.push({l:'大人',p:0});
+  // ユニークキーを生成
+  const key='custom_'+Date.now();
+  const newTour={
+    name,
+    short:document.getElementById('new-short')?.value.trim()||name.slice(0,8),
+    sub:document.getElementById('new-sub')?.value.trim()||'',
+    badge:document.getElementById('new-badge')?.value.trim()||'',
+    desc:document.getElementById('new-desc')?.value.trim()||'',
+    notes:document.getElementById('new-notes')?.value.trim().split('\n').join('\\n')||'',
+    dur:document.getElementById('new-dur')?.value.trim()||'',
+    min_pax:parseInt(document.getElementById('new-minpax')?.value)||1,
+    capacity:parseInt(document.getElementById('new-cap')?.value)||10,
+    img:document.getElementById('new-img')?.value.trim()||'',
+    pax,pt,times,
+    color:_newColor,
+    isCustom:true,
+  };
+  tourSettings[key]=newTour;
+  // カレンダーの初期設定（すべてopen）
+  if(!calendarData[key])calendarData[key]={};
+  for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!calendarData[key][k])calendarData[key][k]=new Date(2026,m-1,d).getDay()===2?'closed':'open';}}
+  await Promise.all([saveTourSettings(),saveCalendar()]);
+  closeModal();
+  curEditTour=key;
+  renderTourEditList();
+  renderTourEditPanel(key);
+  // カレンダー管理のセレクタも更新
+  renderTourSelector();
+}
+
+function renderTourEditPanel(key){
+  const t=getTour(key);
+  const c=getTourColor(key);
+  const isCustom=!DEFAULT_TOURS[key];
+  const panel=document.getElementById('edit-panel');
+  if(!panel)return;
+  const paxRows=(t.pax||[]).map((p,i)=>`
+    <div class="price-row" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      <span class="price-label" style="width:150px;flex-shrink:0;font-size:13px;">${p.l}</span>
+      <input type="number" id="pax-price-${i}" value="${p.p===null?'':p.p}" placeholder="0" style="width:100px;padding:8px;border:1.5px solid var(--b1);border-radius:var(--rx);font-size:13px;font-family:inherit;">
+      <span style="font-size:12px;color:var(--t3);">円 / ${t.pt==='group'?'組':'人'}</span>
+    </div>`).join('');
+  const timeTagsHtml=`<div id="time-tags-wrap" style="margin-bottom:6px;">${(t.times||[]).map((tm,i)=>`<span class="time-tag">${tm}<span class="del" onclick="removeTime(${i})">×</span></span>`).join('')}</div>
+    <div class="time-add-row"><input type="text" id="new-time-input" placeholder="例：21:00〜" style="width:120px;"><button class="btn-sm" onclick="addTime()">＋ 追加</button></div>`;
+  const deleteBtn=isCustom?`<button class="btn-p red" style="width:auto;padding:9px 16px;flex:none;" onclick="deleteTour('${key}')">🗑 削除</button>`:'';
+  const notesVal=(t.notes||'').replace(/\\n/g,'\n');
+  panel.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;">
+      <div style="width:14px;height:14px;border-radius:50%;background:${c.dot};flex-shrink:0;"></div>
+      <span style="font-size:16px;font-weight:700;color:var(--t1);flex:1;">${t.name||'（名前未設定）'}</span>
+      ${isCustom?'<span style="font-size:10px;background:var(--gl);color:var(--gdp);padding:2px 8px;border-radius:20px;font-weight:700;">カスタム</span>':''}
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">📝 基本情報・紹介文</div>
+      <div class="frow"><label>ツアー名</label><input type="text" id="edit-name" value="${(t.name||'').replace(/"/g,'&quot;')}"></div>
+      <div class="f2">
+        <div class="frow"><label>短縮名（サイドバー用）</label><input type="text" id="edit-short" value="${(t.short||'').replace(/"/g,'&quot;')}" maxlength="10"></div>
+        <div class="frow"><label>バッジ表示</label><input type="text" id="edit-badge" value="${(t.badge||t.sub||'').replace(/"/g,'&quot;')}" maxlength="12"></div>
+      </div>
+      <div class="frow"><label>サブタイトル（ツアー種別）</label><input type="text" id="edit-sub" value="${(t.sub||'').replace(/"/g,'&quot;')}"></div>
+      <div class="frow"><label>説明文</label><textarea id="edit-desc" style="min-height:90px;">${t.desc||''}</textarea></div>
+      <div class="frow"><label>注意事項・持ち物（改行で区切り）</label><textarea id="edit-notes" style="min-height:70px;">${notesVal}</textarea></div>
+      <div class="frow"><label>画像URL</label><input type="text" id="edit-img" value="${(t.img||'').replace(/"/g,'&quot;')}" placeholder="https://..."></div>
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">💰 料金設定</div>
+      ${paxRows}
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">⏰ 開始時間帯</div>
+      ${timeTagsHtml}
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">👥 催行・定員設定</div>
+      <div class="f2">
+        <div class="frow"><label>最少催行人数</label><input type="number" id="edit-minpax" value="${t.min_pax||1}" min="1"></div>
+        <div class="frow"><label>1日の最大受付数</label><input type="number" id="edit-cap" value="${t.capacity||10}" min="1"></div>
+      </div>
+      <div class="frow"><label>所要時間（表示用テキスト）</label><input type="text" id="edit-dur" value="${t.dur||''}"></div>
+    </div>
+    <div class="save-bar" style="justify-content:space-between;">
+      <div>${deleteBtn}</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="save-msg hidden" id="save-msg">✅ 保存しました</span>
+        <button class="btn-p" style="width:auto;padding:10px 24px;flex:none;" onclick="saveTourEdit('${key}')">変更を保存</button>
+      </div>
+    </div>`;
+}
+
+function removeTime(idx){
+  const t=getTour(curEditTour);
+  t.times=(t.times||[]).filter((_,i)=>i!==idx);
+  tourSettings[curEditTour]=t;
+  renderTourEditPanel(curEditTour);
+}
+function addTime(){
+  const val=document.getElementById('new-time-input')?.value.trim();
+  if(!val)return;
+  const t=getTour(curEditTour);
+  if(!t.times)t.times=[];
+  t.times.push(val);
+  tourSettings[curEditTour]=t;
+  renderTourEditPanel(curEditTour);
+}
+
+async function saveTourEdit(key){
+  const t=JSON.parse(JSON.stringify(getTour(key)));
+  t.name=document.getElementById('edit-name')?.value.trim()||t.name;
+  t.short=document.getElementById('edit-short')?.value.trim()||t.short;
+  t.badge=document.getElementById('edit-badge')?.value.trim()||t.badge;
+  t.sub=document.getElementById('edit-sub')?.value.trim()||t.sub;
+  t.desc=document.getElementById('edit-desc')?.value.trim()||'';
+  t.notes=document.getElementById('edit-notes')?.value.trim().split('\n').join('\\n')||'';
+  t.img=document.getElementById('edit-img')?.value.trim()||t.img||'';
+  t.dur=document.getElementById('edit-dur')?.value.trim()||'';
+  t.min_pax=parseInt(document.getElementById('edit-minpax')?.value)||1;
+  t.capacity=parseInt(document.getElementById('edit-cap')?.value)||10;
+  t.pax=(t.pax||[]).map((p,i)=>{
+    const el=document.getElementById('pax-price-'+i);
+    if(!el)return p;
+    const v=el.value.trim();
+    return {...p,p:v===''?null:parseInt(v)||0};
+  });
+  tourSettings[key]=t;
+  await saveTourSettings();
+  renderTourEditList();
+  const msg=document.getElementById('save-msg');
+  if(msg){msg.classList.remove('hidden');setTimeout(()=>msg.classList.add('hidden'),2500);}
+}
+
+async function deleteTour(key){
+  if(!confirm('「'+getTour(key).name+'」を削除しますか？\nこの操作は元に戻せません。'))return;
+  delete tourSettings[key];
+  delete calendarData[key];
+  await Promise.all([saveTourSettings(),saveCalendar()]);
+  curEditTour=Object.keys(DEFAULT_TOURS)[0];
+  renderTourEditList();
+  renderTourEditPanel(curEditTour);
+  renderTourSelector();
+}
+
+// ========== カレンダー管理 ==========
+function renderTourSelector(){
+  const list=document.getElementById('tour-selector-list');
+  if(!list)return;
+  list.innerHTML=allTourKeys().map(key=>{
+    const t=getTour(key);const c=getTourColor(key);
+    const td=calendarData[key]||{};
+    const now=new Date();now.setHours(0,0,0,0);
+    const last=new Date(calY,calM,0).getDate();
+    let open=0,closed=0;
+    for(let d=1;d<=last;d++){
+      const dt=new Date(calY,calM-1,d);
+      if(dt>=now&&dt.getDay()!==2){
+        const k=`${calY}-${String(calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if(td[k]==='closed'){closed++;}else{open++;}
+      }
+    }
+    const bkCnt=bookings.filter(b=>b.tourType===key&&(b.status==='pending'||b.status==='approved')&&b.date.startsWith(`${calY}-${String(calM).padStart(2,'0')}`)).length;
+    return `<div class="ts-item${key===curCalTour?' active':''}" onclick="selectCalTour('${key}')">
+      <div class="ts-dot" style="background:${c.dot};"></div>
+      <div class="ts-info"><div class="ts-name">${t.name}</div><div class="ts-stats">今月：○${open}日 ×${closed}日${bkCnt>0?' · 予約'+bkCnt+'件':''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function selectCalTour(t){curCalTour=t;renderTourSelector();renderCalMgr();closeDayDetail();}
+
+function renderCalMgr(){
+  if(!calendarData[curCalTour])calendarData[curCalTour]={};
+  const td=calendarData[curCalTour];
+  const t=getTour(curCalTour);const c=getTourColor(curCalTour);
+  const hd=document.getElementById('cal-hd');if(hd)hd.textContent=calY+'年'+calM+'月';
+  const badge=document.getElementById('cal-tour-badge');if(badge){badge.textContent=t.short||t.name;badge.style.background=c.color;}
+  const grid=document.getElementById('cal-mgr-grid');if(!grid)return;
+  const days=['日','月','火','水','木','金','土'];
+  let html=days.map(d=>`<div class="cal-dn">${d}</div>`).join('');
+  const first=new Date(calY,calM-1,1).getDay();
+  for(let i=0;i<first;i++)html+='<div class="cal-cell is-empty"></div>';
+  const last=new Date(calY,calM,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let d=1;d<=last;d++){
+    const dt=new Date(calY,calM-1,d);dt.setHours(0,0,0,0);
+    const isTue=dt.getDay()===2;const isPast=dt<today;
+    const isToday=dt.getTime()===today.getTime();
+    const key=`${calY}-${String(calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const st=td[key]!==undefined?td[key]:'open';
+    const bks=bookings.filter(b=>b.date===key&&b.tourType===curCalTour&&(b.status==='pending'||b.status==='approved'));
+    let cls='cal-cell';
+    if(isTue||isPast)cls+=' is-tue';
+    else{cls+=st==='open'?' is-open':' is-closed';cls+=' clickable';}
+    if(isToday)cls+=' today-cell';
+    const icon=isTue?'休':st==='open'?'○':'×';
+    const iconColor=isTue?'var(--b2)':st==='open'?c.color:'var(--rb)';
+    const bkHtml=bks.length>0?`<div class="bk-cnt" style="background:${c.color}25;color:${c.color};">${bks.length}件</div>`:'';
+    const detailHtml=bks.length>0?`<div style="font-size:9px;color:${c.color};cursor:pointer;" onclick="event.stopPropagation();showDayDetail('${key}')">詳細▸</div>`:'';
+    const clickAttr=(!isTue&&!isPast)?`onclick="toggleDay('${key}')" `:'';
+    html+=`<div class="${cls}" ${clickAttr}><div class="cn">${d}</div><div class="tog" style="color:${iconColor}">${icon}</div>${bkHtml}${detailHtml}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+async function toggleDay(key){
+  if(!calendarData[curCalTour])calendarData[curCalTour]={};
+  calendarData[curCalTour][key]=calendarData[curCalTour][key]==='open'?'closed':'open';
+  await saveCalendar();renderCalMgr();renderTourSelector();
+}
+
+async function bulkMonth(status){
+  if(!calendarData[curCalTour])calendarData[curCalTour]={};
+  const last=new Date(calY,calM,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let d=1;d<=last;d++){
+    const dt=new Date(calY,calM-1,d);dt.setHours(0,0,0,0);
+    if(dt.getDay()===2||dt<today)continue;
+    const k=`${calY}-${String(calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    calendarData[curCalTour][k]=status;
+  }
+  await saveCalendar();renderCalMgr();renderTourSelector();
+}
+
+function showDayDetail(key){
+  const panel=document.getElementById('day-detail-panel');if(!panel)return;
+  const t=getTour(curCalTour);const c=TOUR_COLORS[curCalTour];
+  const bks=bookings.filter(b=>b.date===key&&b.tourType===curCalTour&&(b.status==='pending'||b.status==='approved'));
+  const d=new Date(key);const ds=['日','月','火','水','木','金','土'];
+  const titleEl=document.getElementById('day-detail-title-text');
+  if(titleEl)titleEl.textContent=`${d.getMonth()+1}月${d.getDate()}日（${ds[d.getDay()]}）の予約 ― ${t.name}`;
+  const listEl=document.getElementById('day-detail-list');
+  if(!listEl)return;
+  if(!bks.length){listEl.innerHTML='<div class="empty" style="padding:1rem;">この日の予約はありません</div>';panel.classList.remove('hidden');return;}
+  listEl.innerHTML=bks.map(b=>`<div class="day-bk-item">
+    <div><b>${b.name}</b>（${b.time} · ${fmtPax(b.pax)}）<br><span style="font-size:11px;color:var(--t3);">${b.hotel||''}${b.area?' · '+b.area:''}</span></div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span class="badge ${b.status==='pending'?'bp':'ba'}">${b.status==='pending'?'承認待ち':'承認済み'}</span>
+      <button class="btn-ok" style="font-size:11px;padding:4px 10px;" onclick="openM('${b.id}','approve')">承認</button>
+    </div></div>`).join('');
+  panel.classList.remove('hidden');
+}
+function closeDayDetail(){const p=document.getElementById('day-detail-panel');if(p)p.classList.add('hidden');}
+function prevM(){calM--;if(calM<1){calM=12;calY--;}renderCalMgr();renderTourSelector();}
+function nextM(){calM++;if(calM>12){calM=1;calY++;}renderCalMgr();renderTourSelector();}
+
+// ========== CSV エクスポート ==========
+function exportCSV(){
+  const from=document.getElementById('exp-from').value;
+  const to=document.getElementById('exp-to').value;
+  const status=document.getElementById('exp-status').value;
+  const tour=document.getElementById('exp-tour').value;
+  let list=bookings.filter(b=>{
+    if(from&&b.date<from)return false;
+    if(to&&b.date>to)return false;
+    if(status!=='all'&&b.status!==status)return false;
+    if(tour!=='all'&&b.tourType!==tour)return false;
+    return true;
+  });
+  if(!list.length){document.getElementById('exp-result').textContent='該当する予約がありませんでした。';return;}
+  const header=['予約番号','氏名','フリガナ','メール','電話','都道府県','ツアー','日程','時間','人数','合計金額','ホテル','エリア','ステータス','キャンセル日','キャンセル料','ご要望','受付日時'];
+  const rows=list.map(b=>[
+    b.id,b.name,b.kana||'',b.email,b.tel,b.pref||'',b.tour,b.date,b.time,
+    fmtPax(b.pax),b.total>0?b.total:'',b.hotel||'',b.area||'',
+    {pending:'承認待ち',approved:'承認済み',rejected:'不承認',cancelled:'キャンセル'}[b.status]||b.status,
+    b.cancelDate||'',b.cancelFee||'',b.note||'',b.createdAt||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`));
+  const csv='\uFEFF'+[header.map(h=>`"${h}"`).join(','),...rows.map(r=>r.join(','))].join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`knp_bookings_${from}_${to}.csv`;a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('exp-result').textContent=`${list.length}件をエクスポートしました。`;
+}
+
+function renderStats(){
+  const el=document.getElementById('stats-area');if(!el)return;
+  const total=bookings.length;
+  const pending=bookings.filter(b=>b.status==='pending').length;
+  const approved=bookings.filter(b=>b.status==='approved').length;
+  const revenue=bookings.filter(b=>b.status==='approved'&&b.total>0).reduce((s,b)=>s+b.total,0);
+  el.innerHTML=[
+    {label:'総予約数',val:total+'件',color:'var(--green)'},
+    {label:'承認待ち',val:pending+'件',color:'var(--at)'},
+    {label:'承認済み',val:approved+'件',color:'var(--gdp)'},
+    {label:'確定売上（承認済み）',val:'¥'+revenue.toLocaleString(),color:'var(--green)'},
+  ].map(s=>`<div style="background:var(--bg);border-radius:var(--rs);padding:12px 14px;"><div style="font-size:11px;color:var(--t3);margin-bottom:4px;">${s.label}</div><div style="font-size:20px;font-weight:700;color:${s.color};">${s.val}</div></div>`).join('');
+}
+
+// ========== モーダル ==========
+function openM(id,type){
+  curB=bookings.find(b=>b.id===id);
+  const mbg=document.getElementById('mbg');if(!mbg)return;
+  mbg.classList.remove('hidden');
+  const titles={approve:'承認メッセージを作成',reject:'受入不可・代替日提案',cancel:'キャンセル処理'};
+  const mt=document.getElementById('mtitle');if(mt)mt.textContent=titles[type]||'';
+  if(type==='approve')buildApprove();
+  else if(type==='reject')buildReject();
+  else if(type==='cancel')buildCancel();
+}
+
+function buildApprove(){
+  const msgs=genMsgs(curB);window._msgs=msgs;
+  const mb=document.getElementById('mbody');if(!mb)return;
+  mb.innerHTML=`
+    <div class="lang-tabs"><button class="lt active" onclick="swLang('ja',this)">🇯🇵 日本語</button><button class="lt" onclick="swLang('en',this)">🇺🇸 English</button><button class="lt" onclick="swLang('zh',this)">🇨🇳 中文</button></div>
+    <textarea class="msg-box" id="msg-t">${msgs.ja}</textarea>
+    <a class="map-chip" href="${MAP_URL}" target="_blank">📍 ${MAP_LABEL}</a>
+    <div class="btn-row"><button class="btn-copy" onclick="copyTxt('msg-t',this)">📋 コピー</button><button class="btn-s" onclick="closeModal()">閉じる</button><button class="btn-p" style="flex:1;" onclick="doApprove()">承認確定</button></div>`;
+}
+
+function swLang(l,el){document.querySelectorAll('.lt').forEach(t=>t.classList.remove('active'));el.classList.add('active');if(window._msgs){const mt=document.getElementById('msg-t');if(mt)mt.value=window._msgs[l];}}
+
+function genMsgs(b){
+  const mt=meetT(b.time);const tot=b.total>0?'¥'+b.total.toLocaleString():'別途ご案内';const ps=fmtPax(b.pax);
+  const ja=`${b.name} 様\n\nこの度は国頭村森林公園のアクティビティにお申込みいただき、誠にありがとうございます。\n以下の内容でご予約を承認いたします。\n\n━━━━━━━━━━━━━━━━━━\n■ ご予約内容\nツアー　：${b.tour}\n日　時　：${b.date}（${b.time}）\nお名前　：${b.name} 様（${ps}）\n料　金　：${tot}\n━━━━━━━━━━━━━━━━━━\n\n■ 集合時間・集合場所\n集合時間：${mt}\n集合場所：国頭村森林公園 管理棟\n駐車場　：${MAP_LABEL}\n地　図　：${MAP_URL}\n\n■ お持ち物\n・温度調節可能な服装（夜間は冷え込みます）\n・ライト・懐中電灯（公園内は非常に暗いです）\n・虫よけスプレー（任意）\n\n■ キャンセルポリシー\n3日前〜：料金の30%／前日：50%／当日：100%\n\n当日のご参加を心よりお待ちしております！\n\n国頭村森林公園\nTEL：0980-43-0514（9:00〜18:00・火曜定休）\nMail：info@kunigamifp.com`;
+  const en=`Dear ${b.name},\n\nThank you for booking with Kunigami Forest Park!\nYour reservation has been confirmed.\n\n━━━━━━━━━━━━━━━━━━\nTour   : ${b.tour}\nDate   : ${b.date} (${b.time})\nName   : ${b.name} (${ps})\nAmount : ${tot}\n━━━━━━━━━━━━━━━━━━\n\nMeeting Time  : ${mt}\nMeeting Place : Kunigami Forest Park Main Office\nParking       : ${MAP_LABEL}\nMap           : ${MAP_URL}\n\nWe look forward to seeing you!\n\nKunigami Forest Park  /  info@kunigamifp.com`;
+  const zh=`尊敬的 ${b.name} 先生/女士，\n\n感谢您预订国头村森林公园的活动！\n\n项目：${b.tour}\n日期：${b.date}（${b.time}）\n金额：${tot}\n\n集合时间：${mt}\n集合地点：国头村森林公园管理楼\n地图：${MAP_URL}\n\n期待与您相见！\n国头村森林公园  /  info@kunigamifp.com`;
+  return {ja,en,zh};
+}
+function meetT(t){const m=t.match(/(\d+):?(\d*)/);if(!m)return t+'（開始10分前）';let h=parseInt(m[1]),min=(parseInt(m[2]||'0'))-10;if(min<0){h--;min+=60;}return h+':'+String(min).padStart(2,'0')+'（開始10分前集合）';}
+
+function buildReject(){
+  const b=curB;const mb=document.getElementById('mbody');if(!mb)return;
+  mb.innerHTML=`
+    <div style="font-size:12px;color:var(--t3);margin-bottom:10px;">${b.name} 様 ／ ${b.tour} ／ ${b.date} ${b.time}</div>
+    <div class="frow"><label>代替日（第1案）</label><input type="datetime-local" id="alt1" oninput="updRej()"></div>
+    <div class="frow"><label>代替日（第2案）</label><input type="datetime-local" id="alt2" oninput="updRej()"></div>
+    <div class="frow"><label>受入不可の理由（内部メモ）</label><input type="text" id="rr" placeholder="例：満員、スタッフ不在"></div>
+    <div class="stitle">送信メッセージ</div>
+    <textarea class="msg-box" id="msg-t" style="min-height:180px;"></textarea>
+    <div class="btn-row"><button class="btn-copy" onclick="copyTxt('msg-t',this)">📋 コピー</button><button class="btn-s" onclick="closeModal()">閉じる</button><button class="btn-p red" style="flex:1;" onclick="doReject()">不承認確定</button></div>`;
+  updRej();
+}
+function updRej(){
+  const b=curB;const a1=document.getElementById('alt1')?.value;const a2=document.getElementById('alt2')?.value;
+  let alt='';if(a1)alt+='\n　● 第1案：'+fmtAlt(a1);if(a2)alt+='\n　● 第2案：'+fmtAlt(a2);if(!alt)alt='\n　（代替日を入力してください）';
+  const el=document.getElementById('msg-t');if(!el)return;
+  el.value=`${b.name} 様\n\nこの度は国頭村森林公園にお申込みいただき、誠にありがとうございます。\n\n誠に恐れ入りますが、ご希望の日程（${b.date} ${b.time}）につきましては、\n現在の体制上、受け入れが難しい状況となっております。\n\n以下の代替日はいかがでしょうか。${alt}\n\nご都合がよろしければ、お早めにご連絡ください。\n\n国頭村森林公園\nTEL：0980-43-0514  /  info@kunigamifp.com`;
+}
+function fmtAlt(dt){if(!dt)return'';const d=new Date(dt);const ds=['日','月','火','水','木','金','土'];return`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${ds[d.getDay()]}）${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}〜`;}
+
+function buildCancel(){
+  const b=curB;const today=new Date().toISOString().slice(0,10);
+  const mb=document.getElementById('mbody');if(!mb)return;
+  mb.innerHTML=`
+    <div style="font-size:12px;color:var(--t3);margin-bottom:10px;">${b.name} 様 ／ ${b.tour} ／ ${b.date}　合計 ¥${b.total.toLocaleString()}</div>
+    <div class="frow"><label>キャンセル申請日</label><input type="date" id="mcd" value="${today}" oninput="updCancel()"></div>
+    <div class="frow"><label>キャンセル区分</label><select id="mct" oninput="updCancel()"><option value="guest">お客様都合（キャンセル料あり）</option><option value="weather">悪天候・自然災害（料金なし）</option><option value="park">公園都合・催行中止（全額返金）</option></select></div>
+    <div id="mcr"></div>
+    <div class="stitle">キャンセル確認メッセージ</div>
+    <textarea class="msg-box" id="cm-t" style="min-height:160px;"></textarea>
+    <div class="btn-row"><button class="btn-copy" onclick="copyTxt('cm-t',this)">📋 コピー</button><button class="btn-s" onclick="closeModal()">閉じる</button><button class="btn-p red" style="flex:1;" onclick="doCancel()">キャンセル確定</button></div>`;
+  updCancel();
+}
+function updCancel(){
+  const b=curB;const cd=document.getElementById('mcd')?.value;const type=document.getElementById('mct')?.value;if(!cd||!b)return;
+  const diff=Math.ceil((new Date(b.date)-new Date(cd))/(1000*60*60*24));
+  let rate=0,label='',free=false;
+  if(type==='guest'){if(diff<=0){rate=100;label='当日・連絡なし';}else if(diff<=2){rate=50;label='前日〜2日前';}else if(diff<=3){rate=30;label='3日前';}else{rate=0;label='4日以上前（無料期間）';free=true;}}
+  else{free=true;label=type==='weather'?'悪天候・自然災害':'公園都合・催行中止';}
+  const fee=Math.ceil(b.total*(rate/100));const ref=b.total-fee;
+  const mcr=document.getElementById('mcr');if(!mcr)return;
+  mcr.innerHTML=free?`<div class="cfree">✅ ${label}　キャンセル料なし${type!=='guest'?'　全額（¥'+b.total.toLocaleString()+'）を返金。':''}</div>`:`<div class="crc"><div class="cancel-row"><span class="clbl">適用ルール</span><span>${label}</span></div><div class="cancel-row"><span class="clbl">料率</span><span class="crh">${rate}%</span></div><div class="cancel-row"><span class="clbl">返金額</span><span>¥${ref.toLocaleString()}</span></div><div class="cancel-total"><span class="ctlbl">キャンセル料</span><span class="ctval">¥${fee.toLocaleString()}</span></div></div>`;
+  const cmt=document.getElementById('cm-t');if(!cmt)return;
+  cmt.value=`${b.name} 様\n\nキャンセルのご連絡ありがとうございます。\n以下の内容で処理いたしましたのでご確認ください。\n\nツアー：${b.tour}\n催行日：${b.date}（${b.time}）\nキャンセル日：${cd}\n区分：${label}\n\n${free?`キャンセル料：なし\n返金額：¥${b.total.toLocaleString()}（全額）`:`キャンセル料：¥${fee.toLocaleString()}（${rate}%）\n返金額：¥${ref.toLocaleString()}`}\n\n返金は3〜10営業日程度かかります。\n\n国頭村森林公園 TEL：0980-43-0514`;
+}
+
+async function doApprove(){
+  if(curB){curB.status='approved';await saveBookings();}
+  closeModal();renderList('pending');updateBadge();
+  try{if(!document.getElementById('page-calendar').classList.contains('hidden')){renderCalMgr();}}catch(e){}
+}
+async function doReject(){if(curB){curB.status='rejected';await saveBookings();}closeModal();renderList('pending');updateBadge();}
+async function doCancel(){
+  if(curB){
+    const cd=document.getElementById('mcd')?.value;const type=document.getElementById('mct')?.value;
+    const diff=Math.ceil((new Date(curB.date)-new Date(cd))/(1000*60*60*24));
+    let rate=0;if(type==='guest'){if(diff<=0)rate=100;else if(diff<=2)rate=50;else if(diff<=3)rate=30;}
+    curB.status='cancelled';curB.cancelDate=cd||'';curB.cancelFee=Math.ceil(curB.total*(rate/100));
+    await saveBookings();
+  }
+  closeModal();renderList('approved');
+}
+
+function copyTxt(id,btn){const el=document.getElementById(id);if(!el)return;navigator.clipboard.writeText(el.value).then(()=>{btn.textContent='✅ コピー完了';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 コピー';btn.classList.remove('copied');},2000);}).catch(()=>{});}
+function closeModal(){const mbg=document.getElementById('mbg');if(mbg)mbg.classList.add('hidden');}
+function closeBg(e){if(e.target===document.getElementById('mbg'))closeModal();}
+
+// ========== キャンセル料計算 ==========
+function runCalc(){
+  const td=document.getElementById('cc-td')?.value,cd=document.getElementById('cc-cd')?.value,amt=parseInt(document.getElementById('cc-amt')?.value)||0,type=document.getElementById('cc-type')?.value;
+  const res=document.getElementById('cc-result');if(!res)return;
+  if(!td||!cd||!amt){res.innerHTML='<div style="color:var(--rb);padding:8px 0;font-size:13px;">全項目を入力してください。</div>';res.classList.remove('hidden');return;}
+  const diff=Math.ceil((new Date(td)-new Date(cd))/(1000*60*60*24));
+  let rate=0,label='',free=false;
+  if(type==='guest'){if(diff<=0){rate=100;label='当日・連絡なし';}else if(diff<=2){rate=50;label='前日〜2日前';}else if(diff<=3){rate=30;label='3日前';}else{rate=0;label='4日以上前';free=true;}}
+  else{free=true;label=type==='weather'?'悪天候・自然災害':'公園都合・催行中止';}
+  const fee=Math.ceil(amt*(rate/100));const ref=amt-fee;
+  res.classList.remove('hidden');
+  res.innerHTML=free?`<div class="cfree" style="margin-top:12px;">✅ ${label}　キャンセル料なし${type!=='guest'?'　全額（¥'+amt.toLocaleString()+'）を返金。':''}</div>`:`<div class="crc" style="margin-top:12px;"><div class="cancel-row"><span class="clbl">催行日まで</span><span>${diff}日前</span></div><div class="cancel-row"><span class="clbl">ルール</span><span>${label}</span></div><div class="cancel-row"><span class="clbl">料率</span><span class="crh">${rate}%</span></div><div class="cancel-row"><span class="clbl">返金額</span><span>¥${ref.toLocaleString()}</span></div><div class="cancel-total"><span class="ctlbl">キャンセル料</span><span class="ctval">¥${fee.toLocaleString()}</span></div></div>`;
+}
+
+// ========== 初期化 ==========
+async function initDashboard(){
+  try{await Promise.all([loadBookings(),loadCalendar(),loadTourSettings()]);}
+  catch(e){bookings=getSamples();calendarData=buildDefaultCal();tourSettings=JSON.parse(JSON.stringify(DEFAULT_TOURS));}
+  updateBadge();
+  renderList('pending');
+  const sl=document.getElementById('sync-label');if(sl)sl.textContent='🟢 同期済み';
+  const cccd=document.getElementById('cc-cd');if(cccd)cccd.value=new Date().toISOString().slice(0,10);
+  setInterval(async()=>{
+    const prev=bookings.filter(b=>b.status==='pending').length;
+    try{await loadBookings();}catch(e){}
+    updateBadge();
+    const curr=bookings.filter(b=>b.status==='pending').length;
+    const sl2=document.getElementById('sync-label');
+    if(sl2)sl2.textContent=curr>prev?'🔔 新着予約あり！':'🟢 同期済み';
+  },30000);
+}
+</script>
+</body>
+</html>
