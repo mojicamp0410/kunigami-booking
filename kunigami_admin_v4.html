@@ -397,8 +397,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
   <!-- キャンセル料計算 -->
   <!-- ガイド管理 -->
   <div id="page-guides" class="hidden">
-    <div class="pt">ガイド管理 <span class="sync-badge">外注費は自動計算</span></div>
-    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;">
+    <div class="pt">ガイド管理</div>
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;">
       <!-- ガイド一覧 -->
       <div>
         <div class="tour-list-panel" style="margin-bottom:12px;">
@@ -408,18 +408,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
           </div>
           <div id="guide-list"></div>
         </div>
-        <!-- 外注費サマリー -->
-        <div class="calc-card" style="padding:1rem;">
-          <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;">💴 外注費サマリー</div>
-          <div class="frow" style="margin-bottom:8px;">
-            <label>集計期間（開始）</label><input type="date" id="guide-from">
-          </div>
-          <div class="frow" style="margin-bottom:10px;">
-            <label>集計期間（終了）</label><input type="date" id="guide-to">
-          </div>
-          <button class="btn-p" style="width:100%;flex:none;margin-bottom:10px;" onclick="calcOutsourceCost()">計算する</button>
-          <div id="outsource-result"></div>
-        </div>
+
       </div>
       <!-- ガイドアサイン -->
       <div>
@@ -1201,12 +1190,7 @@ async function loadGuides(){
 }
 async function saveGuides(){try{await window.storage.set(SK_GUIDES,JSON.stringify(guides),true);}catch(e){}}
 
-function initGuideDates(){
-  const gf=document.getElementById('guide-from');const gt=document.getElementById('guide-to');
-  const today=new Date();
-  if(gf&&!gf.value)gf.value=new Date(today.getFullYear(),today.getMonth(),1).toISOString().slice(0,10);
-  if(gt&&!gt.value)gt.value=new Date(today.getFullYear(),today.getMonth()+1,0).toISOString().slice(0,10);
-}
+function initGuideDates(){} // 外注費機能を削除
 
 function renderGuideList(){
   const el=document.getElementById('guide-list');if(!el)return;
@@ -1216,7 +1200,7 @@ function renderGuideList(){
       <div style="width:32px;height:32px;border-radius:50%;background:${g.color||'var(--green)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${(g.name||'?')[0]}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:700;color:var(--t1);">${g.name}</div>
-        <div style="font-size:11px;color:var(--t3);">単価 ¥${(g.rate||0).toLocaleString()} / ツアー</div>
+        <div style="font-size:11px;color:var(--t3);">${g.note||''}</div>
       </div>
       <button onclick="editGuide(${i})" style="background:none;border:none;font-size:13px;color:var(--t3);cursor:pointer;padding:4px;">✏️</button>
       <button onclick="deleteGuide(${i})" style="background:none;border:none;font-size:13px;color:var(--rb);cursor:pointer;padding:4px;">🗑</button>
@@ -1233,9 +1217,7 @@ function openAddGuideModal(editIdx){
   const palette=['#1D9E75','#185FA5','#C4620F','#3B6D11','#533AB7','#A32D2D','#0E7B7B','#8C6D00'];
   mb.innerHTML=`
     <div class="frow"><label>氏名 <span style="color:var(--rb);">必須</span></label><input type="text" id="guide-name" value="${g.name}" placeholder="山田 太郎"></div>
-    <div class="frow"><label>外注単価（1ツアーあたり・円）</label>
-      <div style="display:flex;align-items:center;gap:8px;"><input type="number" id="guide-rate" value="${g.rate||0}" style="width:120px;">円 / ツアー</div>
-    </div>
+
     <div class="frow"><label>カラー</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${palette.map(c=>`<div onclick="selectGuideColor('${c}',this)" style="width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;border:${c===g.color?'3px solid var(--t1)':'2px solid transparent'};transition:all .15s;" data-color="${c}"></div>`).join('')}</div>
     </div>
@@ -1258,7 +1240,7 @@ function selectGuideColor(color,el){
 async function saveGuide(editIdx){
   const name=document.getElementById('guide-name')?.value.trim();
   if(!name){alert('氏名を入力してください。');return;}
-  const rate=parseInt(document.getElementById('guide-rate')?.value)||0;
+  const rate=0; // 外注費機能削除につき使用しない
   const note=document.getElementById('guide-note')?.value.trim()||'';
   const color=window._guideColor||'#1D9E75';
   const guideObj={id:editIdx!==undefined?guides[editIdx].id:'g_'+Date.now(),name,rate,color,note};
@@ -1320,39 +1302,7 @@ async function assignGuide(bookingId,guideId){
   renderGuideAssignList(curGuideTab);
 }
 
-function calcOutsourceCost(){
-  const from=document.getElementById('guide-from')?.value;
-  const to=document.getElementById('guide-to')?.value;
-  const el=document.getElementById('outsource-result');if(!el)return;
-  const filtered=bookings.filter(b=>{
-    if(b.status!=='approved')return false;
-    if(from&&b.date<from)return false;
-    if(to&&b.date>to)return false;
-    return b.guideId;
-  });
-  if(!filtered.length){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0;">対象期間にアサイン済みの予約がありません</div>';return;}
-  // ガイドごとに集計
-  const summary={};
-  filtered.forEach(b=>{
-    const g=guides.find(x=>x.id===b.guideId);if(!g)return;
-    if(!summary[g.id])summary[g.id]={name:g.name,color:g.color,rate:g.rate,count:0,total:0};
-    summary[g.id].count++;
-    summary[g.id].total+=g.rate;
-  });
-  const grandTotal=Object.values(summary).reduce((s,g)=>s+g.total,0);
-  el.innerHTML=Object.values(summary).map(g=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b1);font-size:12px;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:${g.color};"></div>
-        <span style="color:var(--t1);font-weight:500;">${g.name}</span>
-        <span style="color:var(--t3);">${g.count}件</span>
-      </div>
-      <span style="font-weight:700;color:var(--t1);">¥${g.total.toLocaleString()}</span>
-    </div>`).join('')+`
-    <div style="display:flex;justify-content:space-between;padding-top:8px;font-size:13px;font-weight:700;color:var(--t1);">
-      <span>外注費合計</span><span style="color:var(--rb);">¥${grandTotal.toLocaleString()}</span>
-    </div>`;
-}
+// calcOutsourceCost: 外注費機能を削除
 
 // ========== モーダル ==========
 function openM(id,type){

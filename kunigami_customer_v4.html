@@ -356,7 +356,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
 
   <!-- Step3 -->
   <div id="step3" class="hidden">
-    <button class="btn-back" onclick="goStep(2)">‹ 戻る</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <button class="btn-back" id="s3-back-btn" onclick="goStep(2)">‹ 戻る</button>
+      <button style="padding:8px 18px;background:none;border:1.5px solid var(--green);border-radius:var(--rs);color:var(--green);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;" id="s3-edit-btn" onclick="goStep(2)">
+        ✏️ <span id="s3-edit-label">参加者情報を修正する</span>
+      </button>
+    </div>
     <div class="card">
       <div class="card-title"><span class="card-ico">📋</span>予約内容の確認</div>
       <div class="sum-row"><span class="sum-lbl">ツアー</span><span id="s-tour"></span></div>
@@ -625,23 +630,64 @@ function nextMonth(){calM++;if(calM>12){calM=1;calY++;}renderCal();}
 function showErr(id,msg){
   clearErr(id);
   const el=document.getElementById(id);if(!el)return;
+  // エラーメッセージ表示
   const err=document.createElement('p');
-  err.className='field-err';err.textContent=msg;
-  err.style.cssText='font-size:11px;color:var(--rb);margin-top:4px;';
+  err.className='field-err';
+  err.textContent='⚠ '+msg;
+  err.style.cssText='font-size:12px;color:var(--rb);margin-top:5px;font-weight:500;display:flex;align-items:center;gap:3px;';
   el.parentNode.appendChild(err);
+  // フィールドを赤くハイライト
   el.style.borderColor='var(--rb)';
+  el.style.backgroundColor='#FFF8F8';
+  // フォーカス時に自動リセット
+  const onFocus=()=>{clearErr(id);el.removeEventListener('focus',onFocus);el.removeEventListener('input',onFocus);el.removeEventListener('change',onFocus);};
+  el.addEventListener('focus',onFocus);
+  el.addEventListener('input',onFocus);
+  el.addEventListener('change',onFocus);
 }
 function clearErr(id){
   const el=document.getElementById(id);if(!el)return;
   el.style.borderColor='';
+  el.style.backgroundColor='';
   const prev=el.parentNode.querySelector('.field-err');if(prev)prev.remove();
 }
 function clearAllErr(){['f-sei','f-mei','f-seik','f-meik','f-email','f-tel','f-pref'].forEach(clearErr);}
 
 function validateStep1(){
-  if(!selDate){alert('日程を選択してください。');return false;}
-  if(!selTime){alert('開始時間を選択してください。');return false;}
+  if(!selDate){
+    // カレンダーカードをハイライト
+    const calCard=document.getElementById('cal-grid')?.closest('.card');
+    if(calCard){
+      calCard.style.borderColor='var(--rb)';
+      calCard.style.boxShadow='0 0 0 3px rgba(226,75,74,.15)';
+      setTimeout(()=>{calCard.style.borderColor='';calCard.style.boxShadow='';},2500);
+      calCard.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    showCalMsg(t('err_no_date')||'日程を選択してください');
+    return false;
+  }
+  if(!selTime){
+    const timeWrap=document.getElementById('time-wrap');
+    if(timeWrap){
+      timeWrap.style.outline='2px solid var(--rb)';
+      timeWrap.style.borderRadius='var(--rs)';
+      setTimeout(()=>{timeWrap.style.outline='';},2500);
+      timeWrap.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    showCalMsg(t('err_no_time')||'開始時間を選択してください');
+    return false;
+  }
   return true;
+}
+
+function showCalMsg(msg){
+  const existing=document.getElementById('cal-err-msg');if(existing)existing.remove();
+  const el=document.createElement('p');el.id='cal-err-msg';
+  el.textContent='⚠ '+msg;
+  el.style.cssText='font-size:12px;color:var(--rb);font-weight:500;margin-top:8px;padding:8px 12px;background:#FFF8F8;border-radius:var(--rx);border:1px solid #F0BABA;';
+  const calGrid=document.getElementById('cal-grid');
+  if(calGrid)calGrid.after(el);
+  setTimeout(()=>el.remove(),3000);
 }
 
 
@@ -794,12 +840,15 @@ const I18N={
     tour_lang_notice:'',
     req:'必須', opt:'任意',
     btn_back:'‹ 戻る',
+    btn_edit_info:'✏️ 参加者情報を修正する',
     err_sei:'姓（漢字）を入力してください', err_mei:'名（漢字）を入力してください',
     err_seik:'姓（フリガナ）を入力してください', err_seik_kata:'カタカナで入力してください',
     err_meik:'名（フリガナ）を入力してください', err_meik_kata:'カタカナで入力してください',
     err_email:'メールアドレスを入力してください', err_email_fmt:'正しいメールアドレスを入力してください',
     err_tel:'電話番号を入力してください', err_tel_fmt:'正しい電話番号を入力してください（ハイフン含む）',
     err_pref:'居住地域を選択してください',
+    err_no_date:'日程を選択してください',
+    err_no_time:'開始時間を選択してください',
     sending:'送信中...',
   },
   en:{
@@ -849,12 +898,15 @@ const I18N={
     tour_lang_notice:'⚠️ Tour descriptions are in Japanese only.',
     req:'Required', opt:'Optional',
     btn_back:'‹ Back',
+    btn_edit_info:'✏️ Edit Your Information',
     err_sei:'Please enter your last name', err_mei:'Please enter your first name',
     err_seik:'Please enter last name in Katakana', err_seik_kata:'Please use Katakana characters',
     err_meik:'Please enter first name in Katakana', err_meik_kata:'Please use Katakana characters',
     err_email:'Please enter your email address', err_email_fmt:'Please enter a valid email address',
     err_tel:'Please enter your phone number', err_tel_fmt:'Please enter a valid phone number',
     err_pref:'Please select your region',
+    err_no_date:'Please select a date',
+    err_no_time:'Please select a start time',
     sending:'Sending...',
   }
 };
@@ -896,6 +948,8 @@ function applyI18n(lang){
   const bc=document.getElementById('btn-confirm');if(bc)bc.textContent=d.btn_confirm;
   // 戻るボタン
   document.querySelectorAll('.btn-back').forEach(el=>el.textContent=d.btn_back);
+  // 参加者情報修正ボタン
+  const editLbl=document.getElementById('s3-edit-label');if(editLbl)editLbl.textContent=d.btn_edit_info||(currentLang==='en'?'Edit Your Information':'参加者情報を修正する');
   // フォームplaceholder・label
   applyFormLabels(d);
   // 確認画面ラベル
