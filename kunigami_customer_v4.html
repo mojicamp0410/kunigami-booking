@@ -249,7 +249,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cal-legend-row">
         <div class="cl-item"><div class="cl-dot" style="background:var(--gl);border:1px solid var(--gm);"></div>予約可</div>
         <div class="cl-item"><div class="cl-dot" style="background:#FEF2F2;border:1px solid #F0BABA;"></div>受付停止中</div>
-        <div class="cl-item"><div class="cl-dot" style="background:var(--white);border:1px solid var(--b1);opacity:.4;"></div>定休日・過去</div>
+        <div class="cl-item"><div class="cl-dot" style="background:var(--white);border:1px solid var(--b1);opacity:.4;"></div>過去（4日前以前）</div>
       </div>
       <div id="time-wrap" class="hidden">
         <p style="font-size:13px;font-weight:700;color:var(--t1);margin:14px 0 8px;">開始時間を選択</p>
@@ -478,7 +478,7 @@ function buildDefaultCal(){
   const data={};
   ['star1','star2','photo','forest','monitor'].forEach(t=>{
     data[t]={};
-    for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;data[t][k]=new Date(2026,m-1,d).getDay()===2?'closed':'open';}}
+    for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;data[t][k]='open';}}
   });
   return data;
 }
@@ -548,15 +548,16 @@ function renderCal(){
     const isPast=dt<new Date(today.getFullYear(),today.getMonth(),today.getDate()+4);
     const admStatus=tourCal[key]||'open'; // ツアー別データを参照
     const admClosed=admStatus==='closed';
-    const canBook=!isTue&&!isPast&&!admClosed;
+    const canBook=!isPast&&!admClosed;
     const isSel=selDate&&selDate.d===d&&selDate.m===calM;
     let cls='cdd';
     if(isSel)cls+=' selected';
-    else if(isTue||isPast)cls+=' unavail';
+    else if(isPast)cls+=' unavail';
     else if(admClosed)cls+=' adm-closed';
     else cls+=' avail';
     const tooltip=admClosed?'title="この日は受付を停止しています"':'';
-    html+=`<div class="${cls}" ${tooltip} onclick="${canBook?'pickDate('+d+')':''}">${d}${admClosed&&!isTue&&!isPast?'<br><span style="font-size:9px;">×</span>':''}</div>`;
+    const tueMark=isTue&&!admClosed&&!isPast?'<br><span style="font-size:9px;color:var(--t3);">火</span>':'';
+    html+=`<div class="${cls}" ${tooltip} onclick="${canBook?'pickDate('+d+')':''}">${d}${admClosed?'<br><span style="font-size:9px;">×</span>':''}${tueMark}</div>`;
   }
   grid.innerHTML=html;
 }

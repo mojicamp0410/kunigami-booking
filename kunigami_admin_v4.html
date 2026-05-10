@@ -301,7 +301,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
           <div class="legend-row">
             <div class="leg"><div class="leg-box" style="background:var(--gl);border:1px solid var(--gm);"></div>受付可 ○</div>
             <div class="leg"><div class="leg-box" style="background:var(--rl);border:1px solid #F0BABA;"></div>受付停止 ×</div>
-            <div class="leg"><div class="leg-box" style="background:#FAFAF8;border:1px solid var(--b1);opacity:.6;"></div>定休日（火）/ 過去</div>
+            <div class="leg"><div class="leg-box" style="background:#FAFAF8;border:1px solid var(--b1);opacity:.6;"></div>過去（変更不可）</div>
           </div>
         </div>
         <div class="day-detail hidden" id="day-detail-panel">
@@ -547,7 +547,7 @@ function buildDefaultCal(){
   const data={};
   Object.keys(DEFAULT_TOURS).forEach(t=>{
     data[t]={};
-    for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;data[t][k]=new Date(2026,m-1,d).getDay()===2?'closed':'open';}}
+    for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;data[t][k]='open';}}
   });
   return data;
 }
@@ -749,7 +749,7 @@ async function createNewTour(){
   tourSettings[key]=newTour;
   // カレンダーの初期設定（すべてopen）
   if(!calendarData[key])calendarData[key]={};
-  for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!calendarData[key][k])calendarData[key][k]=new Date(2026,m-1,d).getDay()===2?'closed':'open';}}
+  for(let m=5;m<=12;m++){const last=new Date(2026,m,0).getDate();for(let d=1;d<=last;d++){const k=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!calendarData[key][k])calendarData[key][k]='open';}}
   await Promise.all([saveTourSettings(),saveCalendar()]);
   closeModal();
   curEditTour=key;
@@ -918,15 +918,16 @@ function renderCalMgr(){
     const st=td[key]!==undefined?td[key]:'open';
     const bks=bookings.filter(b=>b.date===key&&b.tourType===curCalTour&&(b.status==='pending'||b.status==='approved'));
     let cls='cal-cell';
-    if(isTue||isPast)cls+=' is-tue';
+    if(isPast)cls+=' is-tue'; // 過去日のみクリック不可スタイル
     else{cls+=st==='open'?' is-open':' is-closed';cls+=' clickable';}
     if(isToday)cls+=' today-cell';
-    const icon=isTue?'休':st==='open'?'○':'×';
-    const iconColor=isTue?'var(--b2)':st==='open'?c.color:'var(--rb)';
+    const tueMark=isTue?'<div style="font-size:9px;color:var(--t3);margin-top:1px;">火</div>':'';
+    const icon=st==='open'?'○':'×';
+    const iconColor=st==='open'?c.color:'var(--rb)';
     const bkHtml=bks.length>0?`<div class="bk-cnt" style="background:${c.color}25;color:${c.color};">${bks.length}件</div>`:'';
     const detailHtml=bks.length>0?`<div style="font-size:9px;color:${c.color};cursor:pointer;" onclick="event.stopPropagation();showDayDetail('${key}')">詳細▸</div>`:'';
-    const clickAttr=(!isTue&&!isPast)?`onclick="toggleDay('${key}')" `:'';
-    html+=`<div class="${cls}" ${clickAttr}><div class="cn">${d}</div><div class="tog" style="color:${iconColor}">${icon}</div>${bkHtml}${detailHtml}</div>`;
+    const clickAttr=!isPast?`onclick="toggleDay('${key}')" `:'';
+    html+=`<div class="${cls}" ${clickAttr}><div class="cn">${d}</div><div class="tog" style="color:${iconColor}">${icon}</div>${tueMark}${bkHtml}${detailHtml}</div>`;
   }
   grid.innerHTML=html;
 }
@@ -943,7 +944,7 @@ async function bulkMonth(status){
   const today=new Date();today.setHours(0,0,0,0);
   for(let d=1;d<=last;d++){
     const dt=new Date(calY,calM-1,d);dt.setHours(0,0,0,0);
-    if(dt.getDay()===2||dt<today)continue;
+    if(dt<today)continue;
     const k=`${calY}-${String(calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     calendarData[curCalTour][k]=status;
   }
