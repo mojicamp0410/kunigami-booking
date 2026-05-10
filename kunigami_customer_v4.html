@@ -165,6 +165,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
 .spinner{width:28px;height:28px;border:3px solid var(--gl);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
+.lang-toggle{display:flex;background:var(--bg);border:1px solid var(--b1);border-radius:20px;padding:2px;gap:2px;}
+.lang-btn{padding:4px 12px;border:none;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;background:none;color:var(--t3);font-family:inherit;transition:all .15s;}
+.lang-btn.active{background:var(--white);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.group-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;}
+.group-type-btn{padding:8px 6px;border:1.5px solid var(--b1);border-radius:var(--rs);font-size:12px;font-weight:500;cursor:pointer;background:var(--white);color:var(--t2);text-align:center;transition:all .15s;font-family:inherit;}
+.group-type-btn:hover{border-color:var(--gm);background:var(--gl);}
+.group-type-btn.selected{border-color:var(--green);background:var(--gl);color:var(--gdp);}
+.gender-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
 .hidden{display:none;}
 </style>
 </head>
@@ -172,7 +180,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
 
 <header class="site-header">
   <div><div class="logo">国頭村森林公園<span>KUNIGAMI FOREST PARK</span></div></div>
-  <div class="hdr-right">アクティビティ予約</div>
+  <div class="hdr-right" style="display:flex;align-items:center;gap:10px;">
+    <span class="lang-notice" id="lang-notice" style="font-size:11px;color:var(--t3);display:none;"></span>
+    <div class="lang-toggle" id="lang-toggle">
+      <button class="lang-btn active" id="btn-ja" onclick="setLang('ja')">日本語</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+    </div>
+  </div>
 </header>
 
 <div id="loading-overlay" class="loading-overlay"><div class="spinner"></div>予約システムを読み込み中...</div>
@@ -294,6 +308,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--t1);
       </div>
     </div>
     <div class="card">
+      <div class="card-title"><span class="card-ico">👥</span><span data-i18n="group_type_title">グループ属性（任意）</span></div>
+      <div class="frow">
+        <label data-i18n="group_type_label">参加グループの種別</label>
+        <div class="group-type-grid" id="group-type-grid">
+          <button class="group-type-btn" onclick="selectGroupType('solo',this)" data-i18n-btn="solo">ソロ</button>
+          <button class="group-type-btn" onclick="selectGroupType('couple',this)" data-i18n-btn="couple">カップル</button>
+          <button class="group-type-btn" onclick="selectGroupType('family',this)" data-i18n-btn="family">ファミリー</button>
+          <button class="group-type-btn" onclick="selectGroupType('friends',this)" data-i18n-btn="friends">友人グループ</button>
+          <button class="group-type-btn" onclick="selectGroupType('group',this)" data-i18n-btn="group">団体・その他</button>
+        </div>
+      </div>
+      <div class="gender-row" style="margin-top:10px;">
+        <div class="frow" style="margin-bottom:0;">
+          <label data-i18n="male_count">男性の人数（任意）</label>
+          <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="f-male" min="0" value="" placeholder="0" style="width:70px;"> <span style="font-size:13px;color:var(--t3);" data-i18n="people">名</span></div>
+        </div>
+        <div class="frow" style="margin-bottom:0;">
+          <label data-i18n="female_count">女性の人数（任意）</label>
+          <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="f-female" min="0" value="" placeholder="0" style="width:70px;"> <span style="font-size:13px;color:var(--t3);" data-i18n="people">名</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-title"><span class="card-ico">🏨</span>滞在先情報</div>
       <div class="frow">
         <label>滞在先ホテル・宿泊施設<span class="opt">（任意）</span></label>
@@ -405,15 +442,17 @@ const HOTELS=[
 const SK_BOOKINGS='knp_bookings';
 const SK_CALENDAR='knp_calendar_v2';
 const SK_TOURS='knp_tour_settings'; // 管理者が編集したツアー設定
+const SK_BSETTINGS='knp_booking_settings'; // 受付期間設定
 let calendarData={};
 let tourSettingsLoaded={};
+let bookingSettings={months:3,deadline:4}; // 管理者設定から読み込む
 let cur='star1',pax={},selDate=null,selTime=null;
 let calY=2026,calM=5;
 let focusedIdx=-1,filtered=[],blurTimer=null;
 
 // ========== 初期化 ==========
 async function init(){
-  await Promise.all([loadCalendar(),loadTourSettings()]);
+  await Promise.all([loadCalendar(),loadTourSettings(),loadBookingSettings()]);
   // 管理者設定でデフォルトTOURSを上書き
   Object.keys(TOURS).forEach(key=>{
     if(tourSettingsLoaded[key]) Object.assign(TOURS[key],tourSettingsLoaded[key]);
@@ -464,6 +503,14 @@ async function loadTourSettings(){
     if(r&&r.value){const p=JSON.parse(r.value);tourSettingsLoaded=(p&&typeof p==='object')?p:{};}
     else tourSettingsLoaded={};
   }catch(e){tourSettingsLoaded={};}
+}
+
+async function loadBookingSettings(){
+  try{
+    const r=await window.storage.get(SK_BSETTINGS,true);
+    if(r&&r.value){const p=JSON.parse(r.value);bookingSettings=(p&&typeof p==='object')?p:{months:3,deadline:4};}
+    else bookingSettings={months:3,deadline:4};
+  }catch(e){bookingSettings={months:3,deadline:4};}
 }
 
 async function loadCalendar(){
@@ -545,7 +592,10 @@ function renderCal(){
     const dt=new Date(calY,calM-1,d);dt.setHours(0,0,0,0);
     const key=`${calY}-${String(calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isTue=dt.getDay()===2;
-    const isPast=dt<new Date(today.getFullYear(),today.getMonth(),today.getDate()+4);
+    const deadline=bookingSettings.deadline||4;
+    const maxMonths=bookingSettings.months||3;
+    const lastBookable=new Date(today.getFullYear(),today.getMonth()+maxMonths,today.getDate());
+    const isPast=dt<new Date(today.getFullYear(),today.getMonth(),today.getDate()+deadline)||dt>lastBookable;
     const admStatus=tourCal[key]||'open'; // ツアー別データを参照
     const admClosed=admStatus==='closed';
     const canBook=!isPast&&!admClosed;
@@ -594,29 +644,7 @@ function validateStep1(){
   return true;
 }
 
-function validateStep2(){
-  clearAllErr();let ok=true;
-  const sei=document.getElementById('f-sei')?.value.trim();
-  const mei=document.getElementById('f-mei')?.value.trim();
-  const seik=document.getElementById('f-seik')?.value.trim();
-  const meik=document.getElementById('f-meik')?.value.trim();
-  const email=document.getElementById('f-email')?.value.trim();
-  const tel=document.getElementById('f-tel')?.value.trim();
-  const pref=document.getElementById('f-pref')?.value;
-  if(!sei){showErr('f-sei','姓（漢字）を入力してください');ok=false;}
-  if(!mei){showErr('f-mei','名（漢字）を入力してください');ok=false;}
-  if(!seik){showErr('f-seik','姓（フリガナ）を入力してください');ok=false;}
-  else if(!/^[ァ-ヶーｦ-ﾟ\s　]+$/.test(seik)){showErr('f-seik','カタカナで入力してください');ok=false;}
-  if(!meik){showErr('f-meik','名（フリガナ）を入力してください');ok=false;}
-  else if(!/^[ァ-ヶーｦ-ﾟ\s　]+$/.test(meik)){showErr('f-meik','カタカナで入力してください');ok=false;}
-  if(!email){showErr('f-email','メールアドレスを入力してください');ok=false;}
-  else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('f-email','正しいメールアドレスを入力してください');ok=false;}
-  if(!tel){showErr('f-tel','電話番号を入力してください');ok=false;}
-  else if(!/^[\d\-\+\(\)\s]{10,15}$/.test(tel.replace(/[^\d]/g,''))||tel.replace(/[^\d]/g,'').length<10){showErr('f-tel','正しい電話番号を入力してください（ハイフン含む）');ok=false;}
-  if(!pref){showErr('f-pref','居住地域を選択してください');ok=false;}
-  if(!ok){const firstErr=document.querySelector('.field-err');if(firstErr)firstErr.scrollIntoView({behavior:'smooth',block:'center'});}
-  return ok;
-}
+
 
 // ========== ステップ管理 ==========
 function goStep(n){
@@ -663,6 +691,9 @@ async function completeBooking(){
   const hotel=document.getElementById('hotel-input').value.trim();
   const area=document.getElementById('hotel-area').value.trim();
   const note=document.getElementById('f-note').value.trim();
+  const groupType=window._groupType||'';
+  const genderMale=parseInt(document.getElementById('f-male')?.value)||0;
+  const genderFemale=parseInt(document.getElementById('f-female')?.value)||0;
   if(!sei||!mei||!email||!tel){alert('必須項目を入力してください。');btn.disabled=false;btn.textContent='🔒 予約を確定する（決済へ進む）';return;}
   const paxObj={};
   TOURS[cur].pax.forEach((p,i)=>{if(pax[i]&&pax[i]>0){const key=['adult','child','infant','group'][i]||'p'+i;paxObj[key]=pax[i];}});
@@ -674,6 +705,7 @@ async function completeBooking(){
     date:selDate?calY+'年'+selDate.m+'月'+selDate.d+'日（実際にはYYYY-MM-DD形式で保存）':calY+'-'+String(calM).padStart(2,'0')+'-'+String(selDate?.d||1).padStart(2,'0'),
     dateStr:selDate?calY+'年'+selDate.m+'月'+selDate.d+'日':'未選択',
     time:selTime||'未選択',pax:paxObj,total,hotel,area,note,
+    groupType,genderMale,genderFemale,
     status:'pending',createdAt:new Date().toISOString()
   };
   // 実際のdateキーを正しく保存
@@ -712,6 +744,270 @@ function onHotelKey(e){
   else if(e.key==='Escape')list.classList.add('hidden');
 }
 function hideAcDelayed(){blurTimer=setTimeout(()=>document.getElementById('ac-list').classList.add('hidden'),150);}
+
+// ========== 多言語 ==========
+const I18N={
+  ja:{
+    loading:'予約システムを読み込み中...',
+    select_tour:'ツアーを選ぶ',
+    btn_book:'この内容で予約に進む →',
+    step1:'日程・人数', step2:'参加者情報', step3:'確認・決済',
+    change:'変更 ›',
+    select_date:'日程を選択', past4:'過去（4日前以前）', avail:'予約可', closed_adm:'受付停止中',
+    select_time:'開始時間を選択',
+    select_pax:'人数を選択', subtotal_label:'小計',
+    next1:'次へ：参加者情報を入力 →',
+    rep_info:'代表者情報',
+    sei_kanji:'姓（漢字）', mei_kanji:'名（漢字）',
+    sei_kana:'姓（フリガナ）', mei_kana:'名（フリガナ）',
+    email:'メールアドレス', tel:'電話番号',
+    pref:'居住地域（都道府県）', pref_ph:'選択してください',
+    group_type_title:'グループ属性（任意）',
+    group_type_label:'参加グループの種別',
+    solo:'ソロ', couple:'カップル', family:'ファミリー', friends:'友人グループ', group:'団体・その他',
+    male_count:'男性の人数（任意）', female_count:'女性の人数（任意）', people:'名',
+    hotel_title:'滞在先情報',
+    hotel_label:'滞在先ホテル・宿泊施設', hotel_ph:'ホテル名を2文字以上入力すると候補が表示されます',
+    hotel_hint:'キャンプ・テント泊の場合は「国頭村森林公園」とご入力ください',
+    hotel_area_label:'滞在エリア', hotel_area_ph:'ホテル選択後に自動入力されます',
+    note_title:'ご要望・特記事項',
+    note_label:'アレルギー・健康上の注意点・ご要望（任意）',
+    note_ph:'例：歩行補助が必要、食物アレルギーあり 等',
+    meet:'集合場所：国頭村森林公園 管理棟<br>〒905-1411 沖縄県国頭村字辺土名1094-1<br>TEL：0980-43-0514（9:00〜18:00・火曜定休）',
+    next2:'次へ：予約内容を確認する →',
+    confirm_title:'予約内容の確認',
+    lbl_tour:'ツアー', lbl_date:'日程', lbl_time:'開始時間', lbl_total:'合計（税込）',
+    payment_title:'お支払い方法',
+    payment_note:'カード情報はSquareが直接処理。当公園サーバーには保存されません。',
+    cancel_title:'キャンセルポリシー（ガイドツアー）',
+    cancel_r1:'3日前〜', cancel_v1:'ツアー料金の30%',
+    cancel_r2:'2日前・前日', cancel_v2:'ツアー料金の50%',
+    cancel_r3:'当日・連絡なし', cancel_v3:'ツアー料金の100%',
+    cancel_note:'最少催行人数に満たない場合、ツアー2日前までに催行中止をご連絡します。その場合は全額返金いたします。',
+    btn_confirm:'🔒 予約を確定する（決済へ進む）',
+    complete_h:'ご予約が完了しました！',
+    complete_p:'確認メールをお送りしました。<br>管理者が内容を確認の上、承認メッセージをお送りします。<br>当日は時間に余裕をもって管理棟へお越しください。',
+    lbl_id:'予約番号', lbl_status:'ステータス', status_pending:'承認待ち（管理者が確認中）',
+    lbl_amount:'お支払い予定金額',
+    contact:'ご不明な点はTEL 0980-43-0514 またはinfo@kunigamifp.comまで',
+    hdr_booking:'アクティビティ予約',
+    tour_lang_notice:'',
+    req:'必須', opt:'任意',
+    btn_back:'‹ 戻る',
+    err_sei:'姓（漢字）を入力してください', err_mei:'名（漢字）を入力してください',
+    err_seik:'姓（フリガナ）を入力してください', err_seik_kata:'カタカナで入力してください',
+    err_meik:'名（フリガナ）を入力してください', err_meik_kata:'カタカナで入力してください',
+    err_email:'メールアドレスを入力してください', err_email_fmt:'正しいメールアドレスを入力してください',
+    err_tel:'電話番号を入力してください', err_tel_fmt:'正しい電話番号を入力してください（ハイフン含む）',
+    err_pref:'居住地域を選択してください',
+    sending:'送信中...',
+  },
+  en:{
+    loading:'Loading booking system...',
+    select_tour:'Select a Tour',
+    btn_book:'Proceed to Book →',
+    step1:'Date & Guests', step2:'Your Info', step3:'Confirm & Pay',
+    change:'Change ›',
+    select_date:'Select a Date', past4:'Past / Outside booking window', avail:'Available', closed_adm:'Unavailable',
+    select_time:'Select Start Time',
+    select_pax:'Number of Guests', subtotal_label:'Subtotal',
+    next1:'Next: Enter Your Information →',
+    rep_info:'Lead Guest Information',
+    sei_kanji:'Last Name', mei_kanji:'First Name',
+    sei_kana:'Last Name (Katakana)', mei_kana:'First Name (Katakana)',
+    email:'Email Address', tel:'Phone Number',
+    pref:'Region (Prefecture)', pref_ph:'Please select',
+    group_type_title:'Group Type (Optional)',
+    group_type_label:'Type of group',
+    solo:'Solo', couple:'Couple', family:'Family', friends:'Friends', group:'Group / Other',
+    male_count:'Number of Males (Optional)', female_count:'Number of Females (Optional)', people:'person(s)',
+    hotel_title:'Accommodation',
+    hotel_label:'Hotel / Accommodation', hotel_ph:'Type 2+ characters to search',
+    hotel_hint:'For camping/tent stays, enter "Kunigami Forest Park"',
+    hotel_area_label:'Area', hotel_area_ph:'Auto-filled after selecting hotel',
+    note_title:'Special Requests',
+    note_label:'Allergies, health notes, or special requests (optional)',
+    note_ph:'e.g. Wheelchair needed, food allergy, etc.',
+    meet:'Meeting point: Kunigami Forest Park Main Building<br>1094-1 Hentona, Kunigami-son, Okinawa 905-1411<br>TEL: 0980-43-0514 (9:00–18:00, closed Tue)',
+    next2:'Next: Confirm Booking →',
+    confirm_title:'Booking Summary',
+    lbl_tour:'Tour', lbl_date:'Date', lbl_time:'Start Time', lbl_total:'Total (Tax incl.)',
+    payment_title:'Payment',
+    payment_note:'Card info is processed securely by Square. Not stored on our servers.',
+    cancel_title:'Cancellation Policy (Guided Tours)',
+    cancel_r1:'3+ days before', cancel_v1:'30% of tour fee',
+    cancel_r2:'1–2 days before', cancel_v2:'50% of tour fee',
+    cancel_r3:'Same day / No-show', cancel_v3:'100% of tour fee',
+    cancel_note:'If minimum guests are not met, we will notify you by 2 days before and issue a full refund.',
+    btn_confirm:'🔒 Confirm Booking (Proceed to Payment)',
+    complete_h:'Booking Complete!',
+    complete_p:'A confirmation email has been sent.<br>Our staff will review and send you an approval message.<br>Please arrive at the main building with time to spare.',
+    lbl_id:'Booking ID', lbl_status:'Status', status_pending:'Awaiting approval',
+    lbl_amount:'Amount Due',
+    contact:'Questions? TEL: 0980-43-0514 / info@kunigamifp.com',
+    hdr_booking:'Activity Booking',
+    tour_lang_notice:'⚠️ Tour descriptions are in Japanese only.',
+    req:'Required', opt:'Optional',
+    btn_back:'‹ Back',
+    err_sei:'Please enter your last name', err_mei:'Please enter your first name',
+    err_seik:'Please enter last name in Katakana', err_seik_kata:'Please use Katakana characters',
+    err_meik:'Please enter first name in Katakana', err_meik_kata:'Please use Katakana characters',
+    err_email:'Please enter your email address', err_email_fmt:'Please enter a valid email address',
+    err_tel:'Please enter your phone number', err_tel_fmt:'Please enter a valid phone number',
+    err_pref:'Please select your region',
+    sending:'Sending...',
+  }
+};
+
+let currentLang='ja';
+window._groupType='';
+
+function setLang(lang){
+  currentLang=lang;
+  document.getElementById('btn-ja').classList.toggle('active',lang==='ja');
+  document.getElementById('btn-en').classList.toggle('active',lang==='en');
+  const notice=document.getElementById('lang-notice');
+  if(notice){notice.textContent=I18N[lang].tour_lang_notice;notice.style.display=I18N[lang].tour_lang_notice?'inline':'none';}
+  applyI18n(lang);
+}
+
+function t(key){return I18N[currentLang][key]||I18N['ja'][key]||key;}
+
+function applyI18n(lang){
+  const d=I18N[lang];
+  // ローディング
+  const lo=document.getElementById('loading-overlay');if(lo){const sp=lo.querySelector('.spinner');lo.innerHTML='';if(sp)lo.appendChild(sp);lo.appendChild(Object.assign(document.createElement('span'),{textContent:d.loading}));}
+  // ヘッダー
+  const hr=document.querySelector('.hdr-right span:not(.lang-notice)');
+  // sec-label
+  const sl=document.querySelector('.sec-label');if(sl)sl.textContent=d.select_tour;
+  // 予約進むボタン
+  const bb=document.querySelector('#phase-select > .btn-primary');if(bb)bb.textContent=d.btn_book;
+  // ステップラベル
+  ['1','2','3'].forEach(n=>{const el=document.getElementById('sl'+n);if(el)el.textContent=d['step'+n];});
+  // カード見出し・ラベルを data-i18n で一括適用
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(d[k]!==undefined)el.innerHTML=d[k];});
+  document.querySelectorAll('[data-i18n-btn]').forEach(el=>{const k=el.getAttribute('data-i18n-btn');if(d[k]!==undefined)el.textContent=d[k];});
+  // カードタイトル（ico付き）
+  applyCardTitles(d);
+  // ステップボタン
+  const n1=document.querySelector('#step1 > .btn-primary');if(n1)n1.textContent=d.next1;
+  const n2=document.querySelector('#step2 > .btn-primary');if(n2)n2.textContent=d.next2;
+  const bc=document.getElementById('btn-confirm');if(bc)bc.textContent=d.btn_confirm;
+  // 戻るボタン
+  document.querySelectorAll('.btn-back').forEach(el=>el.textContent=d.btn_back);
+  // フォームplaceholder・label
+  applyFormLabels(d);
+  // 確認画面ラベル
+  applyConfirmLabels(d);
+  // 完了画面
+  const ch=document.querySelector('.suc-h');if(ch)ch.textContent=d.complete_h;
+  const cp=document.querySelector('.suc-p');if(cp)cp.innerHTML=d.complete_p;
+  const cct=document.querySelector('#c-id')?.closest('.card');
+  applyCompleteLabels(d);
+  // キャンセル
+  applyCancelPolicy(d);
+}
+
+function applyCardTitles(d){
+  const map=[
+    ['card-ico','📅',d.select_date],['card-ico','👥',d.select_pax],
+    ['card-ico','👤',d.rep_info],['card-ico','🏨',d.hotel_title],
+    ['card-ico','📝',d.note_title],['card-ico','📋',d.confirm_title],
+    ['card-ico','💳',d.payment_title],['card-ico','📄',d.cancel_title],
+  ];
+  document.querySelectorAll('.card-title').forEach(ct=>{
+    const ico=ct.querySelector('.card-ico');if(!ico)return;
+    const emoji=ico.textContent;
+    const found=map.find(m=>m[1]===emoji);
+    if(found){const txt=ct.childNodes[ct.childNodes.length-1];if(txt&&txt.nodeType===3)txt.textContent=found[2];}
+  });
+}
+
+function applyFormLabels(d){
+  const pairs=[
+    ['f-sei',d.sei_kanji,'山田'],['f-mei',d.mei_kanji,'太郎'],
+    ['f-seik',d.sei_kana,'ヤマダ'],['f-meik',d.mei_kana,'タロウ'],
+    ['f-email',d.email,'example@email.com'],['f-tel',d.tel,'090-0000-0000'],
+    ['hotel-input',d.hotel_label,d.hotel_ph],
+    ['hotel-area',d.hotel_area_label,d.hotel_area_ph],
+    ['f-note',d.note_label,d.note_ph],
+  ];
+  pairs.forEach(([id,,ph])=>{const el=document.getElementById(id);if(el&&ph)el.placeholder=ph;});
+  // meetingplace
+  const nb=document.querySelector('.note-box');if(nb)nb.innerHTML=d.meet;
+  // hotel hint
+  const ah=document.querySelector('.ac-hint');if(ah)ah.textContent=d.hotel_hint;
+  // hotel area label
+  const hal=document.querySelector('#hotel-area')?.closest('.frow')?.querySelector('label');if(hal)hal.innerHTML=d.hotel_area_label+`<span class="opt">（${d.opt}）</span>`;
+  // pref placeholder
+  const pref=document.getElementById('f-pref');if(pref&&pref.options[0])pref.options[0].textContent=d.pref_ph;
+  // subtotal label
+  const sub=document.querySelector('.sub-row .sub-label');if(sub)sub.textContent=d.subtotal_label;
+  // change btn
+  const chg=document.querySelector('#step1 [onclick="backToSelect()"] span');if(chg)chg.textContent=d.change;
+  // cal note
+  const cn=document.querySelector('.cal-legend-row');
+  if(cn){const items=cn.querySelectorAll('.cl-item');if(items[0])items[0].childNodes[1]&&(items[0].childNodes[1].textContent=d.avail);if(items[1])items[1].childNodes[1]&&(items[1].childNodes[1].textContent=d.closed_adm);if(items[2])items[2].childNodes[1]&&(items[2].childNodes[1].textContent=d.past4);}
+}
+
+function applyConfirmLabels(d){
+  [['s-tour','lbl_tour'],['s-date','lbl_date'],['s-time','lbl_time']].forEach(([id,key])=>{
+    const row=document.getElementById(id)?.closest('.sum-row');if(row)row.querySelector('.sum-lbl').textContent=d[key];
+  });
+  const total=document.querySelector('.sum-total span:first-child');if(total)total.textContent=d.lbl_total;
+  const pay=document.querySelector('.pay-area span');if(pay)pay.textContent=d.payment_note;
+}
+
+function applyCompleteLabels(d){
+  [['c-id','lbl_id'],['c-tour','lbl_tour'],['c-date','lbl_date']].forEach(([id,key])=>{
+    const row=document.getElementById(id)?.closest('.sum-row');if(row)row.querySelector('.sum-lbl').textContent=d[key];
+  });
+  const st=document.querySelector('#step4 .sum-row:last-of-type .sum-lbl');if(st)st.textContent=d.lbl_status;
+  const stv=document.querySelector('#step4 .sum-row:last-of-type span:last-child');if(stv)stv.textContent=d.status_pending;
+  const at=document.querySelector('.sum-total span:first-child');if(at)at.textContent=d.lbl_amount;
+  const ct=document.querySelector('#step4 p:last-of-type');if(ct)ct.textContent=d.contact;
+}
+
+function applyCancelPolicy(d){
+  const tbl=document.querySelector('.ctable');if(!tbl)return;
+  const rows=tbl.querySelectorAll('tr');
+  if(rows[0]){rows[0].cells[0].textContent=d.cancel_r1;rows[0].cells[1].textContent=d.cancel_v1;}
+  if(rows[1]){rows[1].cells[0].textContent=d.cancel_r2;rows[1].cells[1].textContent=d.cancel_v2;}
+  if(rows[2]){rows[2].cells[0].textContent=d.cancel_r3;rows[2].cells[1].textContent=d.cancel_v3;}
+  const cn=document.querySelector('.ctable + .note-box');if(cn)cn.textContent=d.cancel_note;
+}
+
+// バリデーションメッセージの多言語化
+function validateStep2(){
+  clearAllErr();let ok=true;const d=I18N[currentLang];
+  const sei=document.getElementById('f-sei')?.value.trim();
+  const mei=document.getElementById('f-mei')?.value.trim();
+  const seik=document.getElementById('f-seik')?.value.trim();
+  const meik=document.getElementById('f-meik')?.value.trim();
+  const email=document.getElementById('f-email')?.value.trim();
+  const tel=document.getElementById('f-tel')?.value.trim();
+  const pref=document.getElementById('f-pref')?.value;
+  if(!sei){showErr('f-sei',d.err_sei);ok=false;}
+  if(!mei){showErr('f-mei',d.err_mei);ok=false;}
+  if(!seik){showErr('f-seik',d.err_seik);ok=false;}
+  else if(!/^[ァ-ヶーｦ-ﾟ\s　]+$/.test(seik)){showErr('f-seik',d.err_seik_kata);ok=false;}
+  if(!meik){showErr('f-meik',d.err_meik);ok=false;}
+  else if(!/^[ァ-ヶーｦ-ﾟ\s　]+$/.test(meik)){showErr('f-meik',d.err_meik_kata);ok=false;}
+  if(!email){showErr('f-email',d.err_email);ok=false;}
+  else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('f-email',d.err_email_fmt);ok=false;}
+  if(!tel){showErr('f-tel',d.err_tel);ok=false;}
+  else if(tel.replace(/[^\d]/g,'').length<10){showErr('f-tel',d.err_tel_fmt);ok=false;}
+  if(!pref){showErr('f-pref',d.err_pref);ok=false;}
+  if(!ok){const fe=document.querySelector('.field-err');if(fe)fe.scrollIntoView({behavior:'smooth',block:'center'});}
+  return ok;
+}
+
+function selectGroupType(type,el){
+  window._groupType=type;
+  document.querySelectorAll('.group-type-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
 
 init();
 </script>
